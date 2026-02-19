@@ -1,0 +1,1154 @@
+[
+  {
+    "role": "driver",
+    "time": "00:04",
+    "distance": "0.00",
+    "price": "3020"
+  },
+  {
+    "role": "driver",
+    "time": "00:07",
+    "distance": "0.00",
+    "price": "3035"
+  },
+  {
+    "role": "driver",
+    "time": "00:12",
+    "distance": "0.00",
+    "price": "3060"
+  },
+  {
+    "role": "driver",
+    "time": "00:03",
+    "distance": "0.00",
+    "price": "3015",
+    "updatedAt": 1769799043522
+  },
+  {
+    "role": "driver",
+    "time": "00:13",
+    "distance": "0.00",
+    "price": "3065",
+    "updatedAt": 1769799125185
+  },
+  {
+    "role": "driver",
+    "time": "00:29",
+    "distance": "0.00",
+    "price": "3145",
+    "updatedAt": 1769799155526
+  },
+  {
+    "role": "driver",
+    "time": "00:36",
+    "distance": "31.00",
+    "price": "96171",
+    "updatedAt": 1769799233232
+  },
+  {
+    "role": "driver",
+    "time": "00:45",
+    "distance": "31.00",
+    "price": "96216",
+    "updatedAt": 1769799492213
+  },
+  {
+    "role": "driver",
+    "time": "00:57",
+    "distance": "61.99",
+    "price": "189267",
+    "updatedAt": 1769799530889
+  },
+  {
+    "role": "driver",
+    "time": "00:07",
+    "distance": "0.00",
+    "price": "3035",
+    "updatedAt": 1769804533207
+  },
+  {
+    "role": "driver",
+    "time": "00:02",
+    "distance": "0.00",
+    "price": "3010",
+    "updatedAt": 1769804709891
+  },
+  {
+    "role": "driver",
+    "time": "00:14",
+    "distance": "0.00",
+    "price": "3070",
+    "updatedAt": 1769804910045
+  },
+  {
+    "role": "driver",
+    "time": "00:16",
+    "distance": "0.00",
+    "price": "3080",
+    "updatedAt": 1769805045284
+  },
+  {
+    "role": "driver",
+    "time": "01:14",
+    "distance": "0.00",
+    "price": "3370",
+    "updatedAt": 1769968221647
+  },
+  {
+    "role": "driver",
+    "time": "01:34",
+    "distance": "0.00",
+    "price": "3470",
+    "updatedAt": 1769968373422
+  },
+  {
+    "role": "driver",
+    "time": "01:47",
+    "distance": "0.00",
+    "price": "3535",
+    "updatedAt": 1769968534553
+  },
+  {
+    "role": "driver",
+    "time": "01:55",
+    "distance": "0.00",
+    "price": "3575",
+    "updatedAt": 1769968729209
+  },
+  {
+    "role": "driver",
+    "time": "02:18",
+    "distance": "0.00",
+    "price": "3690",
+    "updatedAt": 1769968772477
+  },
+  {
+    "role": "driver",
+    "time": "02:27",
+    "distance": "0.00",
+    "price": "3735",
+    "updatedAt": 1769968890835
+  },
+  {
+    "role": "driver",
+    "time": "02:30",
+    "distance": "0.00",
+    "price": "3750",
+    "updatedAt": 1769968944499
+  },
+  {
+    "role": "driver",
+    "time": "02:35",
+    "distance": "0.00",
+    "price": "3775",
+    "updatedAt": 1769968968645
+  },
+  {
+    "role": "driver",
+    "time": "02:51",
+    "distance": "0.00",
+    "price": "3855",
+    "updatedAt": 1769969065745
+  },
+  {
+    "role": "driver",
+    "time": "00:10",
+    "distance": "0.00",
+    "price": "3050",
+    "updatedAt": 1769971615112
+  },
+  {
+    "role": "driver",
+    "time": "00:18",
+    "distance": "0.00",
+    "price": "3090",
+    "updatedAt": 1769971857681
+  },
+  {
+    "role": "driver",
+    "time": "00:07",
+    "distance": "0.00",
+    "price": "3035",
+    "updatedAt": 1769974363341
+  },
+  {
+    "role": "driver",
+    "time": "00:25",
+    "distance": "0.00",
+    "price": "3125",
+    "updatedAt": 1769974450017
+  },
+  {
+    "role": "driver",
+    "time": "01:06",
+    "distance": "0.00",
+    "price": "3330",
+    "updatedAt": 1769974624257
+  },
+  {
+    "role": "driver",
+    "time": "01:27",
+    "distance": "0.00",
+    "price": "3435",
+    "updatedAt": 1769975569511
+  },
+  {
+    "role": "driver",
+    "time": "01:36",
+    "distance": "0.00",
+    "price": "3480",
+    "updatedAt": 1769975593597
+  },
+  {
+    "role": "driver",
+    "time": "01:50",
+    "distance": "0.00",
+    "price": "3550",
+    "updatedAt": 1769975614283
+  },
+  {
+    "role": "driver",
+    "time": "00:05",
+    "distance": "0.00",
+    "price": "3025",
+    "updatedAt": 1769977964435
+  },
+  {
+    "role": "driver",
+    "time": "00:31",
+    "distance": "0.00",
+    "price": "3155",
+    "updatedAt": 1769978030913
+  },
+  {
+    "role": "driver",
+    "time": "00:03",
+    "distance": "0.00",
+    "price": "3015",
+    "updatedAt": 1769978618701
+  },
+  {
+    "role": "driver",
+    "time": "00:11",
+    "distance": "0.00",
+    "price": "3055",
+    "updatedAt": 1769978708635
+  },
+  {
+    "role": "driver",
+    "time": "00:17",
+    "distance": "0.00",
+    "price": "3085",
+    "updatedAt": 1769978911787
+  },
+  {
+    "role": "driver",
+    "time": "00:49",
+    "distance": "0.00",
+    "price": "3245",
+    "updatedAt": 1769979005374
+  },
+  {
+    "role": "driver",
+    "time": "00:05",
+    "distance": "0.00",
+    "price": "3025",
+    "updatedAt": 1769980345342
+  },
+  {
+    "role": "driver",
+    "time": "00:15",
+    "distance": "0.00",
+    "price": "3075",
+    "updatedAt": 1769980415849
+  },
+  {
+    "role": "driver",
+    "time": "00:23",
+    "distance": "0.00",
+    "price": "3115",
+    "updatedAt": 1769980471426
+  },
+  {
+    "role": "driver",
+    "time": "00:27",
+    "distance": "0.00",
+    "price": "3135",
+    "updatedAt": 1770057433485
+  },
+  {
+    "role": "driver",
+    "time": "00:06",
+    "distance": "0.00",
+    "price": "3030",
+    "updatedAt": 1770057513750
+  },
+  {
+    "role": "driver",
+    "time": "00:04",
+    "distance": "0.00",
+    "price": "3020",
+    "updatedAt": 1770057571039
+  },
+  {
+    "role": "driver",
+    "time": "00:08",
+    "distance": "0.00",
+    "price": "3040",
+    "updatedAt": 1770058878547
+  },
+  {
+    "role": "driver",
+    "time": "00:06",
+    "distance": "0.00",
+    "price": "3030",
+    "updatedAt": 1770058938461
+  },
+  {
+    "role": "driver",
+    "time": "00:05",
+    "distance": "0.00",
+    "price": "3025",
+    "updatedAt": 1770059004361
+  },
+  {
+    "role": "driver",
+    "time": "00:12",
+    "distance": "0.00",
+    "price": "3060",
+    "updatedAt": 1770059264630
+  },
+  {
+    "role": "driver",
+    "time": "00:03",
+    "distance": "0.00",
+    "price": "3015",
+    "updatedAt": 1770059300463
+  },
+  {
+    "role": "driver",
+    "time": "00:04",
+    "distance": "0.00",
+    "price": "3020",
+    "updatedAt": 1770059356349
+  },
+  {
+    "role": "driver",
+    "time": "00:02",
+    "distance": "0.00",
+    "price": "3010",
+    "updatedAt": 1770059697998
+  },
+  {
+    "role": "driver",
+    "time": "00:15",
+    "distance": "0.00",
+    "price": "3075",
+    "updatedAt": 1770059737247
+  },
+  {
+    "role": "driver",
+    "time": "00:12",
+    "distance": "0.00",
+    "price": "3060",
+    "updatedAt": 1770059832432
+  },
+  {
+    "role": "driver",
+    "time": "00:16",
+    "distance": "0.00",
+    "price": "3080",
+    "updatedAt": 1770060064438
+  },
+  {
+    "role": "driver",
+    "time": "00:03",
+    "distance": "0.00",
+    "price": "3015",
+    "updatedAt": 1770060109546
+  },
+  {
+    "role": "driver",
+    "time": "00:16",
+    "distance": "0.00",
+    "price": "3080",
+    "status": "finished",
+    "endedAt": 1770064713283
+  },
+  {
+    "role": "driver",
+    "time": "01:52",
+    "distance": "0.00",
+    "price": "3560",
+    "status": "finished",
+    "endedAt": 1770064926404
+  },
+  {
+    "role": "driver",
+    "time": "00:29",
+    "distance": "0.04",
+    "price": "3276",
+    "status": "finished",
+    "endedAt": 1770138460529
+  },
+  {
+    "role": "driver",
+    "time": "00:31",
+    "distance": "0.00",
+    "price": "3155",
+    "status": "finished",
+    "endedAt": 1770138726029
+  },
+  {
+    "role": "driver",
+    "time": "00:07",
+    "distance": "0.00",
+    "price": "3035",
+    "status": "finished",
+    "endedAt": 1770139301693
+  },
+  {
+    "role": "driver",
+    "time": "00:03",
+    "distance": "0.00",
+    "price": "3015",
+    "status": "finished",
+    "endedAt": 1770139797466
+  },
+  {
+    "role": "driver",
+    "time": "00:17",
+    "distance": "0.00",
+    "price": "3085",
+    "status": "finished",
+    "endedAt": 1770140466531
+  },
+  {
+    "role": "driver",
+    "time": "00:02",
+    "distance": "0.00",
+    "price": "3010",
+    "status": "finished",
+    "endedAt": 1770144822259
+  },
+  {
+    "role": "driver",
+    "time": "00:04",
+    "distance": "0.00",
+    "price": "3020",
+    "status": "finished",
+    "endedAt": 1770219161552
+  },
+  {
+    "role": "driver",
+    "time": "00:02",
+    "distance": "0.00",
+    "price": "3010",
+    "status": "finished",
+    "endedAt": 1770220747738
+  },
+  {
+    "role": "driver",
+    "time": "00:08",
+    "distance": "0.00",
+    "price": "3040",
+    "status": "finished",
+    "endedAt": 1770224089560
+  },
+  {
+    "role": "driver",
+    "time": "00:09",
+    "distance": "0.00",
+    "price": "3045",
+    "status": "finished",
+    "endedAt": 1770230349211
+  },
+  {
+    "role": "driver",
+    "time": "00:06",
+    "distance": "0.00",
+    "price": "3030",
+    "status": "finished",
+    "endedAt": 1770379220815
+  },
+  {
+    "role": "driver",
+    "time": "00:02",
+    "distance": "0.00",
+    "price": "3010",
+    "status": "finished",
+    "endedAt": 1770383930587
+  },
+  {
+    "role": "driver",
+    "time": "00:02",
+    "distance": "0.00",
+    "price": "3010",
+    "status": "finished",
+    "endedAt": 1770399897495
+  },
+  {
+    "role": "driver",
+    "time": "00:25",
+    "distance": "0.00",
+    "price": "3125",
+    "status": "finished",
+    "endedAt": 1770399999206
+  },
+  {
+    "role": "driver",
+    "time": "00:11",
+    "distance": "0.00",
+    "price": "3055",
+    "status": "finished",
+    "endedAt": 1770573616849
+  },
+  {
+    "role": "driver",
+    "time": "02:09",
+    "distance": "55.25",
+    "price": "169401",
+    "status": "finished",
+    "endedAt": 1770575357748
+  },
+  {
+    "role": "driver",
+    "time": "00:02",
+    "distance": "0.00",
+    "price": "3010",
+    "status": "finished",
+    "endedAt": 1770577347055
+  },
+  {
+    "role": "driver",
+    "time": "00:09",
+    "distance": "55.25",
+    "price": "168801",
+    "status": "finished",
+    "endedAt": 1770577411907
+  },
+  {
+    "role": "driver",
+    "time": "00:02",
+    "distance": "0.00",
+    "price": "3010",
+    "status": "finished",
+    "endedAt": 1770580545868
+  },
+  {
+    "role": "driver",
+    "time": "00:05",
+    "distance": "0.00",
+    "price": "3025",
+    "status": "finished",
+    "endedAt": 1770656846827
+  },
+  {
+    "role": "driver",
+    "time": "01:15",
+    "distance": "0.00",
+    "price": "3375",
+    "status": "finished",
+    "endedAt": 1770665367817
+  },
+  {
+    "role": "driver",
+    "time": "00:48",
+    "distance": "0.00",
+    "price": "3240",
+    "status": "finished",
+    "endedAt": 1770667311814
+  },
+  {
+    "role": "driver",
+    "time": "01:14",
+    "distance": "180.72",
+    "price": "545518",
+    "status": "finished",
+    "endedAt": 1770741980756
+  },
+  {
+    "role": "driver",
+    "time": "00:01",
+    "distance": "0.00",
+    "price": "3005",
+    "status": "finished",
+    "endedAt": 1770742140960
+  },
+  {
+    "role": "driver",
+    "time": "00:38",
+    "distance": "60.24",
+    "price": "183906",
+    "status": "finished",
+    "endedAt": 1770744200089
+  },
+  {
+    "role": "driver",
+    "time": "02:06",
+    "distance": "0.00",
+    "price": "3630",
+    "status": "finished",
+    "endedAt": 1770744475209
+  },
+  {
+    "role": "driver",
+    "time": "01:52",
+    "distance": "0.00",
+    "price": "3560",
+    "status": "finished",
+    "endedAt": 1770744956060
+  },
+  {
+    "role": "driver",
+    "time": "01:12",
+    "distance": "0.00",
+    "price": "3360",
+    "status": "finished",
+    "endedAt": 1770745333180
+  },
+  {
+    "role": "driver",
+    "time": "00:24",
+    "distance": "0.00",
+    "price": "3120",
+    "status": "finished",
+    "endedAt": 1770748216373
+  },
+  {
+    "role": "driver",
+    "time": "00:29",
+    "distance": "0.00",
+    "price": "3145",
+    "status": "finished",
+    "endedAt": 1770748387591
+  },
+  {
+    "role": "driver",
+    "time": "01:16",
+    "distance": "120.48",
+    "price": "364812",
+    "status": "finished",
+    "endedAt": 1770748489949
+  },
+  {
+    "role": "driver",
+    "time": "00:01",
+    "distance": "0.00",
+    "price": "3005",
+    "status": "finished",
+    "endedAt": 1770749980697
+  },
+  {
+    "role": "driver",
+    "time": "00:24",
+    "distance": "0.00",
+    "price": "3120",
+    "status": "finished",
+    "endedAt": 1770750030111
+  },
+  {
+    "role": "driver",
+    "time": "00:13",
+    "distance": "0.00",
+    "price": "3065",
+    "status": "finished",
+    "endedAt": 1770750125873
+  },
+  {
+    "role": "driver",
+    "time": "00:14",
+    "distance": "0.00",
+    "price": "3070",
+    "status": "finished",
+    "endedAt": 1770750191656
+  },
+  {
+    "role": "driver",
+    "time": "02:38",
+    "distance": "0.00",
+    "price": "3790",
+    "status": "finished",
+    "endedAt": 1770750434815
+  },
+  {
+    "role": "driver",
+    "time": "00:41",
+    "distance": "0.00",
+    "price": "3205",
+    "status": "finished",
+    "endedAt": 1770753423520
+  },
+  {
+    "role": "driver",
+    "time": "18:19",
+    "distance": "61.95",
+    "price": "194336",
+    "status": "finished",
+    "endedAt": 1770832307362
+  },
+  {
+    "role": "driver",
+    "time": "00:30",
+    "distance": "0.00",
+    "price": "3150",
+    "status": "finished",
+    "endedAt": 1770832497470
+  },
+  {
+    "role": "driver",
+    "time": "00:07",
+    "distance": "0.00",
+    "price": "3035",
+    "status": "finished",
+    "endedAt": 1770833578350
+  },
+  {
+    "role": "driver",
+    "time": "00:10",
+    "distance": "0.00",
+    "price": "3050",
+    "status": "finished",
+    "endedAt": 1770833729943
+  },
+  {
+    "role": "driver",
+    "time": "00:01",
+    "distance": "0.00",
+    "price": "3005",
+    "status": "finished",
+    "endedAt": 1770835193473
+  },
+  {
+    "role": "driver",
+    "time": "00:41",
+    "distance": "0.00",
+    "price": "3205",
+    "status": "finished",
+    "endedAt": 1770835296660
+  },
+  {
+    "role": "driver",
+    "time": "06:23",
+    "distance": "185.84",
+    "price": "562439",
+    "status": "finished",
+    "endedAt": 1770835880407
+  },
+  {
+    "role": "driver",
+    "time": "02:28",
+    "distance": "0.00",
+    "price": "3740",
+    "status": "finished",
+    "endedAt": 1770837917476
+  },
+  {
+    "role": "driver",
+    "time": "00:33",
+    "distance": "0.00",
+    "price": "3165",
+    "status": "finished",
+    "endedAt": 1770838021999
+  },
+  {
+    "role": "driver",
+    "time": "01:10",
+    "distance": "0.00",
+    "price": "3350",
+    "status": "finished",
+    "endedAt": 1770838188850
+  },
+  {
+    "role": "driver",
+    "time": "00:40",
+    "distance": "61.95",
+    "price": "189041",
+    "status": "finished",
+    "endedAt": 1770840681963
+  },
+  {
+    "role": "driver",
+    "time": "00:30",
+    "distance": "0.00",
+    "price": "3150",
+    "status": "finished",
+    "endedAt": 1770840844952
+  },
+  {
+    "role": "driver",
+    "time": "02:00",
+    "distance": "61.95",
+    "price": "189441",
+    "status": "finished",
+    "endedAt": 1770841108690
+  },
+  {
+    "role": "driver",
+    "time": "00:22",
+    "distance": "0.00",
+    "price": "3110",
+    "status": "finished",
+    "endedAt": 1770998851580
+  },
+  {
+    "role": "driver",
+    "time": "00:42",
+    "distance": "59.80",
+    "price": "182620",
+    "status": "finished",
+    "endedAt": 1770998995364
+  },
+  {
+    "role": "driver",
+    "time": "00:18",
+    "distance": "29.90",
+    "price": "92795",
+    "status": "finished",
+    "endedAt": 1770999081324
+  },
+  {
+    "role": "driver",
+    "time": "00:16",
+    "distance": "29.90",
+    "price": "92785",
+    "status": "finished",
+    "endedAt": 1770999312411
+  },
+  {
+    "role": "driver",
+    "time": "00:16",
+    "distance": "0.00",
+    "price": "3080",
+    "status": "finished",
+    "endedAt": 1771001027771
+  },
+  {
+    "role": "driver",
+    "time": "00:09",
+    "distance": "29.90",
+    "price": "92750",
+    "status": "finished",
+    "endedAt": 1771002251607
+  },
+  {
+    "role": "driver",
+    "time": "00:08",
+    "distance": "0.00",
+    "price": "3040",
+    "status": "finished",
+    "endedAt": 1771002935011
+  },
+  {
+    "role": "driver",
+    "time": "00:09",
+    "distance": "0.00",
+    "price": "3045",
+    "status": "finished",
+    "endedAt": 1771004895350
+  },
+  {
+    "role": "driver",
+    "time": "00:31",
+    "distance": "0.00",
+    "price": "3155",
+    "status": "finished",
+    "endedAt": 1771005051227
+  },
+  {
+    "role": "driver",
+    "time": "00:42",
+    "distance": "0.00",
+    "price": "3210",
+    "status": "finished",
+    "endedAt": 1771009288277
+  },
+  {
+    "role": "driver",
+    "time": "00:16",
+    "distance": "0.00",
+    "price": "3080",
+    "status": "finished",
+    "endedAt": 1771009418991
+  },
+  {
+    "role": "driver",
+    "time": "03:45",
+    "distance": "0.00",
+    "price": "4125",
+    "status": "finished",
+    "endedAt": 1771009845443
+  },
+  {
+    "role": "driver",
+    "time": "01:11",
+    "distance": "0.00",
+    "price": "3355",
+    "status": "finished",
+    "endedAt": 1771010078817
+  },
+  {
+    "role": "driver",
+    "time": "00:32",
+    "distance": "0.00",
+    "price": "3160",
+    "status": "finished",
+    "endedAt": 1771010234762
+  },
+  {
+    "role": "driver",
+    "time": "00:34",
+    "distance": "0.00",
+    "price": "3170",
+    "status": "finished",
+    "endedAt": 1771011282150
+  },
+  {
+    "role": "driver",
+    "time": "00:48",
+    "distance": "0.00",
+    "price": "3240",
+    "status": "finished",
+    "endedAt": 1771012576965
+  },
+  {
+    "role": "driver",
+    "time": "00:04",
+    "distance": "29.90",
+    "price": "92725",
+    "status": "finished",
+    "endedAt": 1771012693314
+  },
+  {
+    "role": "driver",
+    "time": "00:01",
+    "distance": "0.00",
+    "price": "3005",
+    "status": "finished",
+    "endedAt": 1771012976448
+  },
+  {
+    "role": "driver",
+    "time": "02:28",
+    "distance": "0.00",
+    "price": "3740",
+    "status": "finished",
+    "endedAt": 1771013219241
+  },
+  {
+    "role": "driver",
+    "time": "00:03",
+    "distance": "0.00",
+    "price": "3015",
+    "status": "finished",
+    "endedAt": 1771013499192
+  },
+  {
+    "role": "driver",
+    "time": "00:22",
+    "distance": "0.00",
+    "price": "3110",
+    "status": "finished",
+    "endedAt": 1771096557267
+  },
+  {
+    "role": "driver",
+    "time": "00:24",
+    "distance": "0.00",
+    "price": "3120",
+    "status": "finished",
+    "endedAt": 1771096754844
+  },
+  {
+    "role": "driver",
+    "time": "00:10",
+    "distance": "0.00",
+    "price": "3050",
+    "status": "finished",
+    "endedAt": 1771096849246
+  },
+  {
+    "role": "driver",
+    "time": "00:03",
+    "distance": "0.00",
+    "price": "3015",
+    "status": "finished",
+    "endedAt": 1771096950260
+  },
+  {
+    "role": "driver",
+    "time": "00:02",
+    "distance": "0.00",
+    "price": "3010",
+    "status": "finished",
+    "endedAt": 1771097032115
+  },
+  {
+    "role": "driver",
+    "time": "00:39",
+    "distance": "0.00",
+    "price": "3195",
+    "status": "finished",
+    "endedAt": 1771097218248
+  },
+  {
+    "role": "driver",
+    "time": "00:19",
+    "distance": "0.00",
+    "price": "3095",
+    "status": "finished",
+    "endedAt": 1771099229009
+  },
+  {
+    "role": "driver",
+    "time": "00:35",
+    "distance": "0.00",
+    "price": "3175",
+    "status": "finished",
+    "endedAt": 1771099425311
+  },
+  {
+    "role": "driver",
+    "time": "00:37",
+    "distance": "0.00",
+    "price": "3185",
+    "status": "finished",
+    "endedAt": 1771099526512
+  },
+  {
+    "role": "driver",
+    "time": "01:42",
+    "distance": "0.00",
+    "price": "3510",
+    "status": "finished",
+    "endedAt": 1771099676528
+  },
+  {
+    "role": "driver",
+    "time": "01:00",
+    "distance": "0.00",
+    "price": "3300",
+    "status": "finished",
+    "endedAt": 1771099846397
+  },
+  {
+    "role": "driver",
+    "time": "00:02",
+    "distance": "0.00",
+    "price": "3010",
+    "status": "finished",
+    "endedAt": 1771100014567
+  },
+  {
+    "role": "driver",
+    "time": "00:02",
+    "distance": "0.00",
+    "price": "3010",
+    "status": "finished",
+    "endedAt": 1771100149725
+  },
+  {
+    "role": "driver",
+    "time": "00:01",
+    "distance": "0.00",
+    "price": "3005",
+    "status": "finished",
+    "endedAt": 1771100198406
+  },
+  {
+    "role": "driver",
+    "time": "00:29",
+    "distance": "0.00",
+    "price": "3145",
+    "status": "finished",
+    "endedAt": 1771100255590
+  },
+  {
+    "role": "driver",
+    "time": "00:15",
+    "distance": "0.00",
+    "price": "3075",
+    "status": "finished",
+    "endedAt": 1771100315706
+  },
+  {
+    "role": "driver",
+    "time": "00:32",
+    "distance": "0.00",
+    "price": "3160",
+    "status": "finished",
+    "endedAt": 1771101241029
+  },
+  {
+    "role": "driver",
+    "time": "00:33",
+    "distance": "0.00",
+    "price": "3165",
+    "status": "finished",
+    "endedAt": 1771101332976
+  },
+  {
+    "role": "driver",
+    "time": "00:04",
+    "distance": "0.00",
+    "price": "3020",
+    "status": "finished",
+    "endedAt": 1771101526290
+  },
+  {
+    "role": "driver",
+    "time": "00:17",
+    "distance": "0.00",
+    "price": "3085",
+    "status": "finished",
+    "endedAt": 1771101598121
+  },
+  {
+    "role": "driver",
+    "time": "00:10",
+    "distance": "0.00",
+    "price": "3050",
+    "status": "finished",
+    "endedAt": 1771101696888
+  },
+  {
+    "role": "driver",
+    "time": "00:01",
+    "distance": "0.00",
+    "price": "3005",
+    "status": "finished",
+    "endedAt": 1771103091036
+  },
+  {
+    "role": "driver",
+    "time": "00:01",
+    "distance": "0.00",
+    "price": "3005",
+    "status": "finished",
+    "endedAt": 1771103125557
+  },
+  {
+    "role": "driver",
+    "time": "15:46",
+    "distance": "59.80",
+    "price": "187140",
+    "status": "finished",
+    "endedAt": 1771180164799
+  },
+  {
+    "role": "driver",
+    "time": "00:02",
+    "distance": "0.00",
+    "price": "3010",
+    "status": "finished",
+    "endedAt": 1771180192993
+  },
+  {
+    "role": "driver",
+    "time": "00:16",
+    "distance": "0.00",
+    "price": "3080",
+    "status": "finished",
+    "endedAt": 1771180243172
+  }
+]
