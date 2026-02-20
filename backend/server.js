@@ -70,6 +70,7 @@ app.get("/api/trips", (req, res) => {
   res.json(data);
 });
 
+
 app.get("/api/trip/current", (req, res) => {
   if (currentTrip) {
     return res.json(currentTrip);
@@ -214,6 +215,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Backend running on port ${PORT}`);
 });
+
 
 
 
