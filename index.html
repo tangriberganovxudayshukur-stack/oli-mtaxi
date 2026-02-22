@@ -902,35 +902,32 @@ function initPassengerMap(lat, lng) {
       controls: []
     });
 
-    // 🔵 YO‘LOVCHI MARKERI (QO‘LDA SURILADI)
     passengerPlacemark = new ymaps.Placemark(
       [lat, lng],
       { balloonContent: "📍 Siz shu yerdasiz" },
       {
         preset: "islands#blueDotIcon",
-        draggable: true        // ✅ MUHIM
+        draggable: false
       }
     );
 
-    // 📍 MARKER SILJIGANDA ISHLAYDI
-   passengerPlacemark.events.add("dragend", () => {
-  const coords = passengerPlacemark.geometry.getCoordinates();
-
-  console.log("📍 Marker qo‘lda ko‘chirildi:", coords);
-
-  window.manualPassengerLocation = {
-    lat: coords[0],
-    lng: coords[1]
-  };
-
-  useManualLocation = true; // 🔥 GPS ENDI ISHLAMAYDI
-});
-
-
     pMap.geoObjects.add(passengerPlacemark);
+
+    // 🔥 XARITA SURILSA — MARKAZ YANGILANADI
+    pMap.events.add("actionend", () => {
+      const center = pMap.getCenter();
+
+      passengerPlacemark.geometry.setCoordinates(center);
+
+      window.manualPassengerLocation = {
+        lat: center[0],
+        lng: center[1]
+      };
+
+      useManualLocation = true;
+    });
   });
 }
-
 
 function locatePassenger() {
   if (useManualLocation) {
@@ -1258,4 +1255,5 @@ if (!trip && !order) {
 
 
 </html>
+
 
