@@ -915,18 +915,20 @@ function initPassengerMap(lat, lng) {
     pMap.geoObjects.add(passengerPlacemark);
 
     // 🔥 XARITA SURILSA — MARKAZ YANGILANADI
-    pMap.events.add("actionend", () => {
-      const center = pMap.getCenter();
+   pMap.events.add("actionend", () => {
+  if (locationLocked) return; // 🔒 buyurtmadan keyin ishlamaydi
 
-      passengerPlacemark.geometry.setCoordinates(center);
+  const center = pMap.getCenter();
 
-      window.manualPassengerLocation = {
-        lat: center[0],
-        lng: center[1]
-      };
+  passengerPlacemark.geometry.setCoordinates(center);
 
-      useManualLocation = true;
-    });
+  window.manualPassengerLocation = {
+    lat: center[0],
+    lng: center[1]
+  };
+
+  useManualLocation = true;
+});
   });
 }
 
@@ -974,13 +976,15 @@ async function orderTaxi() {
 
   const data = await res.json();
 
-  if (data.success) {
-    document.getElementById("tripInfo").innerHTML =
-      "<p>⏳ Buyurtma yuborildi, haydovchi kutilmoqda...</p>";
-    
-	watchCurrentTrip();
-	watchDriverOnPassengerMap();
-  }
+ if (data.success) {
+  locationLocked = true; // 🔒 MUHIM
+
+  document.getElementById("tripInfo").innerHTML =
+    "<p>⏳ Buyurtma yuborildi, haydovchi kutilmoqda...</p>";
+
+  watchCurrentTrip();
+  watchDriverOnPassengerMap();
+}
 }
 
 
@@ -1156,6 +1160,7 @@ function clearPassengerMap() {
   }
 
   // 🔄 GPS GA QAYTISH
+  locationLocked = false; // 🔓 yana joy tanlash mumkin
   useManualLocation = false;
   window.manualPassengerLocation = null;
 
@@ -1256,6 +1261,7 @@ if (!trip && !order) {
 
 
 </html>
+
 
 
 
