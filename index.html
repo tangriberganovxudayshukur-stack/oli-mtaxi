@@ -192,7 +192,27 @@
   box-shadow: 0 0 10px #0f0;
 }
 
+/* 🔄 LOADER */
+.loader {
+  width: 32px;
+  height: 32px;
+  border: 4px solid #0f0;
+  border-top: 4px solid transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 15px auto;
+  display: none;
+}
 
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* tugma yuklanayotganda */
+button.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
 
 </style>
 
@@ -232,7 +252,7 @@
 
   <button onclick="login()">🔑 Kirish</button>
   <button onclick="register()">📝 Ro‘yxatdan o‘tish</button>
-
+  <div id="authLoader" class="loader"></div>
   <button class="backBtn" onclick="backToRoles()">⬅ Orqaga</button>
 </div>
 
@@ -376,8 +396,9 @@ const API_URL =
   let wakeLock = null;
   
   let passengerMapWatcher = null;
+  
+  let locationLocked = false; // 🔓 boshida ochiq
 
-  let locationLocked = false; // 🔓 boshida ochiq	
 
   async function enableWakeLock() {
 
@@ -817,57 +838,75 @@ function goBack() {
   console.log("Orqaga qaytildi (clean)");
 }
 
-
-
-
 async function login() {
+  showAuthLoader();
+
   const phone = document.getElementById("phone").value;
   const password = document.getElementById("password").value;
 
- const res = await fetch(API_URL + "/api/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ phone, password })
-  });
+  try {
+    const res = await fetch(API_URL + "/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone, password })
+    });
 
-  const data = await res.json();
+    const data = await res.json();
 
-  if (!data.success) {
-    alert(data.error);
-    return;
+    if (!data.success) {
+      alert(data.error);
+      hideAuthLoader();
+      return;
+    }
+
+    role = data.user.role;
+    openRoleUI();
+
+  } catch (e) {
+    alert("Server bilan bog‘lanib bo‘lmadi");
   }
 
-  role = data.user.role;
-  openRoleUI();
-  console.log("LOGIN RESPONSE:", data);
-
+  hideAuthLoader();
 }
 
 async function register() {
-   // ✅ AVVAL ROL TEKSHIRILADI
   if (!role) {
     alert("Avval rol tanlang");
     return;
   }
+
+  showAuthLoader();
+
   const phone = document.getElementById("phone").value;
   const password = document.getElementById("password").value;
 
-  const res = await fetch(API_URL + "/api/register", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ phone, password, role })
-  });
+  try {
+    const res = await fetch(API_URL + "/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone, password, role })
+    });
 
-  const data = await res.json();
+    const data = await res.json();
 
-  if (!data.success) {
-    alert(data.error);
-    return;
+    if (!data.success) {
+      alert(data.error);
+      hideAuthLoader();
+      return;
+    }
+
+    alert("Ro‘yxatdan o‘tildi!");
+    openRoleUI();
+
+  } catch (e) {
+    alert("Server xatosi");
   }
 
-  alert("Ro‘yxatdan o‘tildi!");
-  openRoleUI();
+  hideAuthLoader();
 }
+
+
+
 
 function openRoleUI() {
   document.getElementById("authUI").style.display = "none";
@@ -935,6 +974,7 @@ function initPassengerMap(lat, lng) {
   });
 }
 
+
 function locatePassenger() {
   if (useManualLocation) {
     console.log("📌 Qo‘lda tanlangan joy ishlatilmoqda");
@@ -979,7 +1019,7 @@ async function orderTaxi() {
 
   const data = await res.json();
 
- if (data.success) {
+  if (data.success) {
   locationLocked = true; // 🔒 MUHIM
 
   document.getElementById("tripInfo").innerHTML =
@@ -1191,7 +1231,19 @@ function movePassengerToGPS() {
   });
 }
 
+function showAuthLoader() {
+  document.getElementById("authLoader").style.display = "block";
+  document.querySelectorAll("#authUI button").forEach(b => {
+    b.classList.add("loading");
+  });
+}
 
+function hideAuthLoader() {
+  document.getElementById("authLoader").style.display = "none";
+  document.querySelectorAll("#authUI button").forEach(b => {
+    b.classList.remove("loading");
+  });
+}
 
 
 
@@ -1262,10 +1314,4 @@ if (!trip && !order) {
 </script>
 </body>
 
-
 </html>
-
-
-
-
-
