@@ -838,6 +838,7 @@ function goBack() {
   console.log("Orqaga qaytildi (clean)");
 }
 
+let driverId = null;	
 async function login() {
   showAuthLoader();
 
@@ -867,6 +868,7 @@ async function login() {
   }
 
   hideAuthLoader();
+	 driverId = data.user.id; // 🔑 MUHIM
 }
 
 async function register() {
@@ -1315,5 +1317,6 @@ if (!trip && !order) {
 </body>
 
 </html>
+
 
 
