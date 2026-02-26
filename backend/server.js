@@ -1,7 +1,8 @@
 let currentTrip = null;
 let currentOrder = null;
 let lastFinishedTrip = null;
-
+let drivers = [];
+let orders = [];
 
 // Boshida importlar
 import fs from "fs";
@@ -215,6 +216,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Backend running on port ${PORT}`);
 });
+
 
 
 
