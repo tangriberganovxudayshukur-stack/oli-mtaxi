@@ -1037,7 +1037,7 @@ function watchOrdersForDriver() {
   if (orderWatcher) return;
 
   orderWatcher = setInterval(async () => {
-    const res = await fetch(API_URL + "/api/order/current");
+    const res = await fetch(API_URL + "/api/order/current/" + driverId)
     const order = await res.json();
 
     const box = document.getElementById("orderBox");
@@ -1315,4 +1315,5 @@ if (!trip && !order) {
 </body>
 
 </html>
+
 
