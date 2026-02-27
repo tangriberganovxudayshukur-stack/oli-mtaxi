@@ -564,7 +564,8 @@ fetch(API_URL + "/api/driver/location", {
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
     lat: latitude,
-    lng: longitude
+    lng: longitude,
+	driverId: driverId // 🔥 SHART  
   })
 });
 
@@ -1325,6 +1326,7 @@ if (!trip && !order) {
 </body>
 
 </html>
+
 
 
 
