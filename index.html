@@ -860,6 +860,12 @@ async function login() {
       return;
     }
 
+     // 🔥 QO‘SHILGAN QISM (SHU YETISHMAYOTGAN EDI)
+    if (data.user.role === "driver") {
+      driverId = data.user.id;
+      console.log("Driver ID:", driverId);
+    }	
+	  
     role = data.user.role;
     openRoleUI();
 
@@ -1319,6 +1325,7 @@ if (!trip && !order) {
 </body>
 
 </html>
+
 
 
 
