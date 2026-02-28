@@ -179,7 +179,7 @@ app.get("/api/order/current/:driverId", (req, res) => {
   const driverId = Number(req.params.driverId);
 
   const order = orders.find(
-    o => o.driverId === driverId && o.status === "waiting"
+    o => o.driverId === driverId && o.status !== "finished"
   );
 
   res.json(order || null);
@@ -276,6 +276,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Backend running on port ${PORT}`);
 });
+
 
 
 
