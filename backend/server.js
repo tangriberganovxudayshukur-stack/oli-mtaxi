@@ -231,6 +231,12 @@ app.post("/api/order/accept", (req, res) => {
 let driverLocation = null;
 app.post("/api/driver/location", (req, res) => {
   const { lat, lng, driverId } = req.body;
+	
+   driverLocation = {   // 🔥 MANA SHU YETISHMAYAPTI
+    lat,
+    lng,
+    driverId
+  };	
 
   let driver = drivers.find(d => d.id === driverId);
 
@@ -281,6 +287,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Backend running on port ${PORT}`);
 });
+
 
 
 
