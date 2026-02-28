@@ -278,8 +278,13 @@ function distance(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-app.get("/api/order/passenger/current", (req, res) => {
-  const order = orders.find(o => o.status !== "finished");
+app.get("/api/order/passenger/current/:passengerId", (req, res) => {
+  const passengerId = Number(req.params.passengerId);
+
+  const order = orders.find(
+    o => o.passengerId === passengerId && o.status !== "finished"
+  );
+
   res.json(order || null);
 });
 
@@ -290,6 +295,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Backend running on port ${PORT}`);
 });
+
 
 
 
