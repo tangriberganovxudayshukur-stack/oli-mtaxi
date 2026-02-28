@@ -213,14 +213,18 @@ app.post("/api/trip/update", (req, res) => {
 });
 
 app.post("/api/order/accept", (req, res) => {
-  if (!currentOrder) {
+  const { orderId, driverId } = req.body;
+
+  const order = orders.find(
+    o => o.id === orderId && o.driverId === driverId
+  );
+
+  if (!order) {
     return res.json({ success: false });
   }
 
-  currentOrder.status = "accepted";
-  currentOrder.acceptedAt = Date.now();
-
-  // ❗ trip bu yerda YO‘Q
+  order.status = "accepted";
+  order.acceptedAt = Date.now();
 
   res.json({ success: true });
 });
@@ -286,6 +290,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Backend running on port ${PORT}`);
 });
+
 
 
 
