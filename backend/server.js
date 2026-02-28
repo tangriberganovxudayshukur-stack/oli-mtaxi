@@ -1,5 +1,4 @@
 let currentTrip = null;
-let currentOrder = null;
 let lastFinishedTrip = null;
 let drivers = [];
 let orders = [];
@@ -75,11 +74,11 @@ app.post("/api/order", (req, res) => {
     lat,
     lng,
     status: "waiting",
-    driverId: nearest.id
+    driverId: nearest.id,
+    passengerId: req.body.passengerId  
   };
 
   orders.push(order);
-  currentOrder = order; // 🔥 SHART
   res.json({ success: true });
 });
 
@@ -287,6 +286,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Backend running on port ${PORT}`);
 });
+
 
 
 
