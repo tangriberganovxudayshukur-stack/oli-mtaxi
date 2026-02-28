@@ -1086,8 +1086,13 @@ function syncTrip() {
 
 async function acceptOrder() {
   const res = await fetch(API_URL + "/api/order/accept", {
-    method: "POST"
-  });
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    orderId: currentOrder.id,
+    driverId: driverId
+  })
+});
 
   const data = await res.json();
 
@@ -1326,6 +1331,7 @@ if (!trip && !order) {
 </body>
 
 </html>
+
 
 
 
