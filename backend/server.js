@@ -32,10 +32,15 @@ app.post("/api/trip", (req, res) => {
   data.push(trip);
   fs.writeFileSync("trips.json", JSON.stringify(data, null, 2));
 
+    // 🔥 ORDERNI YAKUNLASH
+  if (currentOrder) {
+    currentOrder.status = "finished";
+    currentOrder.finishedAt = Date.now();
+  }	
   // ❗ REAL HOLAT TOZALANADI
   currentTrip = null;
   currentOrder = null;
-  lastFinishedTrip = null; // 🔥 ENG MUHIM
+  
 
   res.json({ success: true });
 });
@@ -276,6 +281,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Backend running on port ${PORT}`);
 });
+
 
 
 
