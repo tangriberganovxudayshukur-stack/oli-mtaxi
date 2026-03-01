@@ -1272,7 +1272,7 @@ function watchCurrentTrip() {
 
   tripWatchInterval = setInterval(async () => {
    const orderRes = await fetch(
-  API_URL + "/api/order/passenger/current/" + passengerId
+  API_URL + "/api/order/passenger/current/" + userId
 );
     const tripRes  = await fetch(API_URL + "/api/trip/current");
 
@@ -1327,6 +1327,7 @@ if (!trip && !order) {
 </body>
 
 </html>
+
 
 
 
