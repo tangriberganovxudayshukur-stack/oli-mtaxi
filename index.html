@@ -1159,7 +1159,7 @@ function watchDriverOnPassengerMap() {
   if (passengerMapWatcher) return; // 🔒 2 marta ochilmasin
 
   passengerMapWatcher = setInterval(async () => {
-    const res = await fetch(API_URL + "/api/driver/location");
+    const res = await fetch(API_URL + "/api/driver/location/" + driverId);
     const driver = await res.json();
     if (!driver || !pMap) return;
 
@@ -1331,6 +1331,7 @@ if (!trip && !order) {
 </body>
 
 </html>
+
 
 
 
