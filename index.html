@@ -840,42 +840,37 @@ function goBack() {
 }
 
 let driverId = null;	
+let userId = null; // 👈 GLOBAL
+
 async function login() {
   showAuthLoader();
 
   const phone = document.getElementById("phone").value;
   const password = document.getElementById("password").value;
 
-  try {
-    const res = await fetch(API_URL + "/api/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone, password })
-    });
+  const res = await fetch(API_URL + "/api/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ phone, password })
+  });
 
-    const data = await res.json();
+  const data = await res.json();
 
-    if (!data.success) {
-      alert(data.error);
-      hideAuthLoader();
-      return;
-    }
-
-     // 🔥 QO‘SHILGAN QISM (SHU YETISHMAYOTGAN EDI)
-    if (data.user.role === "driver") {
-      driverId = data.user.id;
-      console.log("Driver ID:", driverId);
-    }	
-	  
-    role = data.user.role;
-    openRoleUI();
-
-  } catch (e) {
-    alert("Server bilan bog‘lanib bo‘lmadi");
+  if (!data.success) {
+    alert(data.error);
+    hideAuthLoader();
+    return;
   }
 
-  hideAuthLoader();
+  userId = data.user.id;      // ✅ MUHIM
+  role = data.user.role;
 
+  if (role === "driver") {
+    driverId = userId;
+  }
+
+  openRoleUI();
+  hideAuthLoader();
 }
 
 async function register() {
@@ -1332,6 +1327,7 @@ if (!trip && !order) {
 </body>
 
 </html>
+
 
 
 
