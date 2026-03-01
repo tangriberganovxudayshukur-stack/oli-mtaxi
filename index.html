@@ -1019,11 +1019,12 @@ async function orderTaxi() {
   const res = await fetch(API_URL + "/api/order", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      lat,
-      lng,
-      createdAt: Date.now()
-    })
+ body: JSON.stringify({
+  lat,
+  lng,
+  passengerId: userId,
+  createdAt: Date.now()
+})
   });
 
   const data = await res.json();
@@ -1276,7 +1277,7 @@ function watchCurrentTrip() {
 
   tripWatchInterval = setInterval(async () => {
    const orderRes = await fetch(
-  API_URL + "/api/order/passenger/current"
+  API_URL + "/api/order/passenger/current/" + passengerId
 );
     const tripRes  = await fetch(API_URL + "/api/trip/current");
 
@@ -1331,6 +1332,7 @@ if (!trip && !order) {
 </body>
 
 </html>
+
 
 
 
