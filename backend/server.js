@@ -231,7 +231,7 @@ app.post("/api/order/accept", (req, res) => {
 
 
 
-let driverLocation = null;
+let driverLocations = {}; // driverId -> location
 app.post("/api/driver/location", (req, res) => {
   const { lat, lng, driverId } = req.body;
 	
@@ -260,8 +260,8 @@ app.post("/api/driver/location", (req, res) => {
   res.json({ success: true });
 });
 
-app.get("/api/driver/location", (req, res) => {
-  res.json(driverLocation);
+app.get("/api/driver/location/:driverId", (req, res) => {
+  res.json(driverLocations[req.params.driverId] || null);
 });
 
 function distance(lat1, lon1, lat2, lon2) {
@@ -295,6 +295,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Backend running on port ${PORT}`);
 });
+
 
 
 
