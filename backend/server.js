@@ -234,34 +234,33 @@ app.post("/api/order/accept", (req, res) => {
 let driverLocations = {}; // driverId -> location
 app.post("/api/driver/location", (req, res) => {
   const { lat, lng, driverId } = req.body;
-	
-   driverLocation = {   // 🔥 MANA SHU YETISHMAYAPTI
-    lat,
-    lng,
-    driverId
-  };	
 
+  // 🔥 1. location saqlash
+  driverLocations[driverId] = { lat, lng, driverId };
+
+  // 🔥 2. drivers array ni yangilash
   let driver = drivers.find(d => d.id === driverId);
 
   if (!driver) {
-    driver = {
+    drivers.push({
       id: driverId,
       lat,
       lng,
       online: true,
       busy: false
-    };
-    drivers.push(driver);
+    });
   } else {
     driver.lat = lat;
     driver.lng = lng;
+    driver.online = true;
   }
 
   res.json({ success: true });
 });
 
 app.get("/api/driver/location/:driverId", (req, res) => {
-  res.json(driverLocations[req.params.driverId] || null);
+  const driverId = req.params.driverId;
+  res.json(driverLocations[driverId] || null);
 });
 
 function distance(lat1, lon1, lat2, lon2) {
@@ -295,6 +294,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Backend running on port ${PORT}`);
 });
+
 
 
 
