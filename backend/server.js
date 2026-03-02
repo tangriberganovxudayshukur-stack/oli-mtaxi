@@ -1,4 +1,5 @@
 let currentTrip = null;
+let currentOrder = null;
 let lastFinishedTrip = null;
 let drivers = [];
 let orders = [];
@@ -31,57 +32,29 @@ app.post("/api/trip", (req, res) => {
   data.push(trip);
   fs.writeFileSync("trips.json", JSON.stringify(data, null, 2));
 
-    // 🔥 ORDERNI YAKUNLASH
-  if (currentOrder) {
-    currentOrder.status = "finished";
-    currentOrder.finishedAt = Date.now();
-  }	
   // ❗ REAL HOLAT TOZALANADI
   currentTrip = null;
   currentOrder = null;
-  
+  lastFinishedTrip = null; // 🔥 ENG MUHIM
 
   res.json({ success: true });
 });
+
 
 
 
 
 app.post("/api/order", (req, res) => {
-  const { lat, lng } = req.body;
-
-  // faqat online va bo‘sh haydovchilar
-  const availableDrivers = drivers.filter(d => d.online && !d.busy);
-
-  if (availableDrivers.length === 0) {
-    return res.json({ success: false, error: "Haydovchi topilmadi" });
-  }
-
-  // eng yaqinini topamiz
-  let nearest = availableDrivers[0];
-  let minDist = distance(lat, lng, nearest.lat, nearest.lng);
-
-  for (let d of availableDrivers) {
-    const dist = distance(lat, lng, d.lat, d.lng);
-    if (dist < minDist) {
-      minDist = dist;
-      nearest = d;
-    }
-  }
-
-  const order = {
+  currentOrder = {
+    ...req.body,
     id: Date.now(),
-    lat,
-    lng,
-    status: "waiting",
-    driverId: nearest.id,
-    passengerId: req.body.passengerId  
+    status: "waiting"
   };
 
-  orders.push(order);
+  console.log("🧍 Yangi buyurtma:", currentOrder);
+
   res.json({ success: true });
 });
-
 
 
 
@@ -179,14 +152,8 @@ app.post("/api/login", (req, res) => {
   });
 });
 
-app.get("/api/order/current/:driverId", (req, res) => {
-  const driverId = Number(req.params.driverId);
-
-  const order = orders.find(
-    o => o.driverId === driverId && o.status !== "finished"
-  );
-
-  res.json(order || null);
+app.get("/api/order/current", (req, res) => {
+  res.json(currentOrder);
 });
 
 app.post("/api/trip/start", (req, res) => {
@@ -213,79 +180,34 @@ app.post("/api/trip/update", (req, res) => {
 });
 
 app.post("/api/order/accept", (req, res) => {
-  const { orderId, driverId } = req.body;
-
-  const order = orders.find(
-    o => o.id === orderId && o.driverId === driverId
-  );
-
-  if (!order) {
+  if (!currentOrder) {
     return res.json({ success: false });
   }
 
-  order.status = "accepted";
-  order.acceptedAt = Date.now();
+  currentOrder.status = "accepted";
+  currentOrder.acceptedAt = Date.now();
+
+  // ❗ trip bu yerda YO‘Q
 
   res.json({ success: true });
 });
 
 
 
-let driverLocations = {}; // driverId -> location
+let driverLocation = null;
 app.post("/api/driver/location", (req, res) => {
-  const { lat, lng, driverId } = req.body;
-
-  // 🔥 1. location saqlash
-  driverLocations[driverId] = { lat, lng, driverId };
-
-  // 🔥 2. drivers array ni yangilash
-  let driver = drivers.find(d => d.id === driverId);
-
-  if (!driver) {
-    drivers.push({
-      id: driverId,
-      lat,
-      lng,
-      online: true,
-      busy: false
-    });
-  } else {
-    driver.lat = lat;
-    driver.lng = lng;
-    driver.online = true;
-  }
-
+  driverLocation = {
+    lat: req.body.lat,
+    lng: req.body.lng,
+    updatedAt: Date.now()
+  };
   res.json({ success: true });
 });
-
-app.get("/api/driver/location/:driverId", (req, res) => {
-  const driverId = req.params.driverId;
-  res.json(driverLocations[driverId] || null);
+app.get("/api/driver/location", (req, res) => {
+  res.json(driverLocation);
 });
 
-function distance(lat1, lon1, lat2, lon2) {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
 
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(lat1 * Math.PI / 180) *
-    Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLon / 2) ** 2;
-
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-app.get("/api/order/passenger/current/:passengerId", (req, res) => {
-  const passengerId = Number(req.params.passengerId);
-
-  const order = orders.find(
-    o => o.passengerId === passengerId && o.status !== "finished"
-  );
-
-  res.json(order || null);
-});
 
 
 // Serverni ishga tushirish (Render uchun mos)
@@ -294,17 +216,6 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Backend running on port ${PORT}`);
 });
-
-
-
-
-
-
-
-
-
-
-
 
 
 
