@@ -564,8 +564,7 @@ fetch(API_URL + "/api/driver/location", {
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
     lat: latitude,
-    lng: longitude,
-	driverId: driverId // 🔥 SHART  
+    lng: longitude
   })
 });
 
@@ -839,37 +838,34 @@ function goBack() {
   console.log("Orqaga qaytildi (clean)");
 }
 
-let driverId = null;	
-let userId = null; // 👈 GLOBAL
-
 async function login() {
   showAuthLoader();
 
   const phone = document.getElementById("phone").value;
   const password = document.getElementById("password").value;
 
-  const res = await fetch(API_URL + "/api/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ phone, password })
-  });
+  try {
+    const res = await fetch(API_URL + "/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone, password })
+    });
 
-  const data = await res.json();
+    const data = await res.json();
 
-  if (!data.success) {
-    alert(data.error);
-    hideAuthLoader();
-    return;
+    if (!data.success) {
+      alert(data.error);
+      hideAuthLoader();
+      return;
+    }
+
+    role = data.user.role;
+    openRoleUI();
+
+  } catch (e) {
+    alert("Server bilan bog‘lanib bo‘lmadi");
   }
 
-  userId = data.user.id;      // ✅ MUHIM
-  role = data.user.role;
-
-  if (role === "driver") {
-    driverId = userId;
-  }
-
-  openRoleUI();
   hideAuthLoader();
 }
 
@@ -1014,12 +1010,11 @@ async function orderTaxi() {
   const res = await fetch(API_URL + "/api/order", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
- body: JSON.stringify({
-  lat,
-  lng,
-  passengerId: userId,
-  createdAt: Date.now()
-})
+    body: JSON.stringify({
+      lat,
+      lng,
+      createdAt: Date.now()
+    })
   });
 
   const data = await res.json();
@@ -1042,17 +1037,15 @@ function watchOrdersForDriver() {
   if (orderWatcher) return;
 
   orderWatcher = setInterval(async () => {
-    const res = await fetch(API_URL + "/api/order/current/" + driverId)
+    const res = await fetch(API_URL + "/api/order/current");
     const order = await res.json();
 
     const box = document.getElementById("orderBox");
 
     if (!order) {
       box.style.display = "none";
-	   currentOrder = null; // 🔥	
       return;
-    } 
-	   currentOrder = null; // 🔥
+    }
 
     box.style.display = "block";
     document.getElementById("orderLocation").innerText =
@@ -1084,13 +1077,8 @@ function syncTrip() {
 
 async function acceptOrder() {
   const res = await fetch(API_URL + "/api/order/accept", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    orderId: currentOrder.id,
-    driverId: driverId
-  })
-});
+    method: "POST"
+  });
 
   const data = await res.json();
 
@@ -1157,7 +1145,7 @@ function watchDriverOnPassengerMap() {
   if (passengerMapWatcher) return; // 🔒 2 marta ochilmasin
 
   passengerMapWatcher = setInterval(async () => {
-    const res = await fetch(API_URL + "/api/driver/location/" + driverId);
+    const res = await fetch(API_URL + "/api/driver/location");
     const driver = await res.json();
     if (!driver || !pMap) return;
 
@@ -1257,7 +1245,7 @@ function hideAuthLoader() {
   });
 }
 
-console.log("Passenger ID:", userId);
+
 
 
 
@@ -1273,9 +1261,7 @@ function watchCurrentTrip() {
   if (tripWatchInterval) return;
 
   tripWatchInterval = setInterval(async () => {
-   const orderRes = await fetch(
-  API_URL + "/api/order/passenger/current/" + userId
-);
+    const orderRes = await fetch(API_URL + "/api/order/current");
     const tripRes  = await fetch(API_URL + "/api/trip/current");
 
     const order = await orderRes.json();
@@ -1329,17 +1315,4 @@ if (!trip && !order) {
 </body>
 
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
 
