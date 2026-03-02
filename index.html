@@ -1049,8 +1049,10 @@ function watchOrdersForDriver() {
 
     if (!order) {
       box.style.display = "none";
+	   currentOrder = null; // 🔥	
       return;
-    }
+    } 
+	   currentOrder = null; // 🔥
 
     box.style.display = "block";
     document.getElementById("orderLocation").innerText =
@@ -1327,6 +1329,7 @@ if (!trip && !order) {
 </body>
 
 </html>
+
 
 
 
