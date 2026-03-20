@@ -125,7 +125,7 @@
   font-size: 1rem;
   margin-top: 8px;
 }
-//ROL TANLASH DIZAYNI BOSHLANDI
+/* ROL TANLASH DIZAYNI BOSHLANDI */
 #roleSelect {
   text-align: center;
 }
@@ -192,6 +192,28 @@
   box-shadow: 0 0 10px #0f0;
 }
 
+/* 🔄 LOADER */
+.loader {
+  width: 32px;
+  height: 32px;
+  border: 4px solid #0f0;
+  border-top: 4px solid transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 15px auto;
+  display: none;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* tugma yuklanayotganda */
+button.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
 
 
 </style>
@@ -232,7 +254,7 @@
 
   <button onclick="login()">🔑 Kirish</button>
   <button onclick="register()">📝 Ro‘yxatdan o‘tish</button>
-
+  <div id="authLoader" class="loader"></div>
   <button class="backBtn" onclick="backToRoles()">⬅ Orqaga</button>
 </div>
 
@@ -362,7 +384,10 @@
 
 <script>
  // 📌 Telefon va kompyuter uchun IP ni aniqlash
-const API_URL = "http://localhost:3000";
+const API_URL =
+  location.hostname === "localhost"
+    ? "http://localhost:3000"
+    : "https://oli-mtaxi-backend.onrender.com";
 
   let routeDrawn = false;
 
@@ -373,7 +398,12 @@ const API_URL = "http://localhost:3000";
   let wakeLock = null;
   
   let passengerMapWatcher = null;
-
+  
+  let locationLocked = false; // 🔓 boshida ochiq
+ 
+  let userId = null;
+  
+  let previousDriverId = null;
 
   async function enableWakeLock() {
 
@@ -453,6 +483,7 @@ function disableWakeLock() {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
+	  driverId: userId,           // ← MUHIM qo‘shildi
       status: "started",
       time: "00:00",
       distance: 0,
@@ -538,9 +569,10 @@ fetch(API_URL + "/api/driver/location", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
-    lat: latitude,
-    lng: longitude
-  })
+  driverId: userId,
+  lat: latitude,
+  lng: longitude
+})
 });
 
 
@@ -638,12 +670,19 @@ function enableTracking() {
 
 
 function goOnline() {
+ if (!userId) { alert("Avval tizimga kiring!"); return; }
   if (!navigator.onLine) {
     alert("Internet yo‘q. Linyaga chiqib bo‘lmaydi.");
     return;
   }
 
   isOnline = true;
+  // 🔥 LINYAGA CHIQISH — BO‘SHATISH
+fetch(API_URL + "/api/driver/online", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ driverId: userId })
+}).catch(err => console.error("Online status xato:", err));
 
   document.getElementById("goOnlineBtn").style.display = "none";
   document.getElementById("goOfflineBtn").style.display = "block";
@@ -655,12 +694,44 @@ function goOnline() {
 }
 
 function goOffline() {
-  isOnline = false;
+  // 🔥 YANGI — XAVFSIZLIK TEKSHIRUVI
+  if (tripActive) {
+    const confirmExit = confirm(
+      "⚠️ DIQQAT!\n\n" +
+      "Safar hozir davom etmoqda!\n\n" +
+      "Linyadan chiqsangiz:\n" +
+      "• GPS kuzatuv to‘xtaydi\n" +
+      "• Vaqt va masofa hisoblash to‘xtaydi\n" +
+      "• Yo‘lovchi safar uzilgan deb o‘ylashi mumkin\n\n" +
+      "Davom ettirib, linyadan chiqmoqchimisiz?"
+    );
 
+    if (!confirmExit) {
+      return; // ❌ Foydalanuvchi "Bekor qilish" bosdi → hech narsa o‘zgarmaydi
+    }
+    // Agar "OK" bossa — pastdagi kod ishlaydi
+  }
+  
+   // 🔥 xaritani tozalash 
+  if (route && yMap) {
+    yMap.geoObjects.remove(route);
+    route = null;
+  }
+  routeDrawn = false;
+
+  // ====================== ASOSIY KOD (eski kod) ======================
+  isOnline = false;
   document.getElementById("goOnlineBtn").style.display = "block";
   document.getElementById("goOfflineBtn").style.display = "none";
 
-   stopTrip();             // hisoblash to‘xtaydi
+  // 🔥 LINYADAN CHIQISH — BAND QILISH (oldingi javobdan)
+  fetch(API_URL + "/api/driver/offline", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ driverId: userId })
+  }).catch(err => console.error("Offline status xato:", err));
+
+  stopTrip();           // hisoblash to‘xtaydi
   disableWakeLock();
 
   if (watchId !== null) {
@@ -668,13 +739,12 @@ function goOffline() {
     watchId = null;
   }
 
-if (orderWatcher) {
-  clearInterval(orderWatcher);
-  orderWatcher = null;
-}
+  if (orderWatcher) {
+    clearInterval(orderWatcher);
+    orderWatcher = null;
+  }
 
-document.getElementById("orderBox").style.display = "none";
-
+  document.getElementById("orderBox").style.display = "none";
   console.log("Haydovchi LINYADAN CHIQDI");
 }
 
@@ -733,48 +803,62 @@ function endTrip() {
   tripActive = false;
   stopTrip();
 
-  // Safarni backend ga yuboramiz
-  // ✅ TO‘G‘RISI
+  // ✅ Safarni backend ga yuboramiz
+ // YANGI — to‘g‘rilangan versiya
 fetch(API_URL + "/api/trip", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
     role: role,
+    driverId: userId,                          // ← MUHIM O‘ZGARISH!
     time: document.getElementById("time").innerText,
     distance: totalDistance.toFixed(2),
     price: document.getElementById("price").innerText
   })
 })
-
   .then(res => res.json())
-  .then(data => console.log("Backend javobi:", data))
-  .catch(err => console.log("Xato backendga yuborishda:", err));
+  .then(data => {
+    console.log("Backend javobi:", data);
+  })
+  .catch(err => {
+    console.error("Xato backendga yuborishda:", err);
+  });
 
+  // UI elementlarini yangilash
   const btn = document.getElementById("tripBtn");
-  btn.innerText = "▶ Start";
-  btn.style.background = "#0f0";
-  btn.style.color = "#000";
+  if (btn) {
+    btn.innerText = "▶ Start";
+    btn.style.background = "#0f0";
+    btn.style.color = "#000";
+  }
 
-  openEndTripModal();
-  
   document.getElementById("tripPanel").style.display = "none";
   document.getElementById("orderBox").style.display = "none";
-  document.getElementById("acceptBtn").style.display = "block";
+  
+  const acceptBtn = document.getElementById("acceptBtn");
+  if (acceptBtn) {
+    acceptBtn.style.display = "block";
+  }
 
+   // 2. Xaritadagi marshrutni o'chirish
+  if (route && yMap) {
+    yMap.geoObjects.remove(route);
+    route = null;
+  }
+    // 3. MUHIM: Eski intervalni tozalab, yangidan buyurtma kutishni boshlash
+  if (orderWatcher) clearInterval(orderWatcher);
+  orderWatcher = null;
+  watchOrdersForDriver(); 
+
+  routeDrawn = false;
+   openEndTripModal();
   reset();
-  if (route) {
-  yMap.geoObjects.remove(route);
-  route = null;
+  document.getElementById("orderBox").style.display = "none";
+document.getElementById("tripPanel").style.display = "none";
+document.getElementById("acceptBtn").style.display = "block";
+ 
 }
 
-routeDrawn = false;
-
-if (route) {
-  yMap.geoObjects.remove(route);
-  route = null;
-}
-
-}
 
 //MODAL OYNASI OCHISH Funksiya BOSHLANDI
 function openEndTripModal() {
@@ -813,57 +897,86 @@ function goBack() {
   console.log("Orqaga qaytildi (clean)");
 }
 
-
-
-
 async function login() {
+  showAuthLoader();
+
   const phone = document.getElementById("phone").value;
   const password = document.getElementById("password").value;
 
- const res = await fetch(API_URL + "/api/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ phone, password })
-  });
+  try {
+    const res = await fetch(API_URL + "/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone, password })
+    });
 
-  const data = await res.json();
+    const data = await res.json();
 
-  if (!data.success) {
-    alert(data.error);
-    return;
-  }
-
+    if (!data.success) {
+      alert(data.error);
+      hideAuthLoader();
+      return;
+    }
+if (data.success) {
+  userId = data.user.id;   // 🔥 MUHIM
+  localStorage.setItem("userId", userId);   // ← qo‘shing
+  localStorage.setItem("role", role);   // ← YANGI
   role = data.user.role;
   openRoleUI();
-  console.log("LOGIN RESPONSE:", data);
+}
+   
 
+  } catch (e) {
+    alert("Server bilan bog‘lanib bo‘lmadi");
+  }
+
+  hideAuthLoader();
 }
 
 async function register() {
-   // ✅ AVVAL ROL TEKSHIRILADI
   if (!role) {
     alert("Avval rol tanlang");
     return;
   }
+
+  showAuthLoader();
+
   const phone = document.getElementById("phone").value;
   const password = document.getElementById("password").value;
 
-  const res = await fetch(API_URL + "/api/register", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ phone, password, role })
-  });
+  try {
+    const res = await fetch(API_URL + "/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone, password, role })
+    });
 
-  const data = await res.json();
+    const data = await res.json();
 
-  if (!data.success) {
-    alert(data.error);
-    return;
-  }
-
+    if (!data.success) {
+      alert(data.error);
+      hideAuthLoader();
+      return;
+    }
+if (data.success) {
+  userId = data.user.id;   // 🔥 MUHIM
+  localStorage.setItem("userId", userId);   // ← qo‘shing
+  localStorage.setItem("role", role);   // ← YANGI
+  role = data.user.role;
   alert("Ro‘yxatdan o‘tildi!");
   openRoleUI();
 }
+    
+
+  } catch (e) {
+    alert("Server xatosi");
+  }
+
+  hideAuthLoader();
+}
+
+
+
 
 function openRoleUI() {
   document.getElementById("authUI").style.display = "none";
@@ -902,32 +1015,32 @@ function initPassengerMap(lat, lng) {
       controls: []
     });
 
-    // 🔵 YO‘LOVCHI MARKERI (QO‘LDA SURILADI)
     passengerPlacemark = new ymaps.Placemark(
       [lat, lng],
       { balloonContent: "📍 Siz shu yerdasiz" },
       {
         preset: "islands#blueDotIcon",
-        draggable: true        // ✅ MUHIM
+        draggable: false
       }
     );
 
-    // 📍 MARKER SILJIGANDA ISHLAYDI
-   passengerPlacemark.events.add("dragend", () => {
-  const coords = passengerPlacemark.geometry.getCoordinates();
+    pMap.geoObjects.add(passengerPlacemark);
 
-  console.log("📍 Marker qo‘lda ko‘chirildi:", coords);
+    // 🔥 XARITA SURILSA — MARKAZ YANGILANADI
+   pMap.events.add("actionend", () => {
+  if (locationLocked) return; // 🔒 buyurtmadan keyin ishlamaydi
+
+  const center = pMap.getCenter();
+
+  passengerPlacemark.geometry.setCoordinates(center);
 
   window.manualPassengerLocation = {
-    lat: coords[0],
-    lng: coords[1]
+    lat: center[0],
+    lng: center[1]
   };
 
-  useManualLocation = true; // 🔥 GPS ENDI ISHLAMAYDI
+  useManualLocation = true;
 });
-
-
-    pMap.geoObjects.add(passengerPlacemark);
   });
 }
 
@@ -977,51 +1090,98 @@ async function orderTaxi() {
   const data = await res.json();
 
   if (data.success) {
-    document.getElementById("tripInfo").innerHTML =
-      "<p>⏳ Buyurtma yuborildi, haydovchi kutilmoqda...</p>";
-    
-	watchCurrentTrip();
-	watchDriverOnPassengerMap();
-  }
+  locationLocked = true; // 🔒 MUHIM
+
+  document.getElementById("tripInfo").innerHTML =
+    "<p>⏳ Buyurtma yuborildi, haydovchi kutilmoqda...</p>";
+ window.currentOrderId = data.orderId; // 🔥 ESDA SAQLAYMIZ
+  watchCurrentTrip();
+  watchDriverOnPassengerMap();
+}
 }
 
 
 let orderWatcher = null;
-
+let previousWasWaiting = false; // 🔥 YANGI o‘zgaruvchi
 function watchOrdersForDriver() {
   if (orderWatcher) return;
-
   orderWatcher = setInterval(async () => {
-    const res = await fetch(API_URL + "/api/order/current");
+    const res = await fetch(API_URL + "/api/order/driver/" + userId);
     const order = await res.json();
-
+    
     const box = document.getElementById("orderBox");
+    const acceptBtn = document.getElementById("acceptBtn");
+    const tripPanel = document.getElementById("tripPanel");
 
     if (!order) {
       box.style.display = "none";
+      acceptBtn.classList.remove("countdown");
+      acceptBtn.style.animation = "";
+
+      // 🔥 YANGI: TIMEOUT yoki offline bo‘lganda marshrutni 100% tozalaymiz
+      if (route && yMap) {
+        yMap.geoObjects.remove(route);
+        route = null;
+      }
+      routeDrawn = false;
+
+      if (previousWasWaiting) {
+        document.getElementById("goOnlineBtn").style.display = "block";
+        document.getElementById("goOfflineBtn").style.display = "none";
+        console.log("⏰ Timeout: Haydovchi avto OFFLINE + marshrut tozalandi");
+        previousWasWaiting = false;
+      }
       return;
+    }
+	
+	 // waiting bo‘lsa flagni o‘rnatamiz
+    if (order.status === "waiting") {
+      previousWasWaiting = true;
+    } else {
+      previousWasWaiting = false;
     }
 
     box.style.display = "block";
     document.getElementById("orderLocation").innerText =
       `Lat: ${order.lat.toFixed(5)}, Lng: ${order.lng.toFixed(5)}`;
-	  if (lastPosition) {
-  drawRoute(
-    lastPosition.lat,
-    lastPosition.lng,
-    order.lat,
-    order.lng
-  );
-}
 
+    if (order.status === "waiting") {
+      acceptBtn.style.display = "block";
+      tripPanel.style.display = "none";
+
+      const now = Date.now();
+      const elapsed = now - (order.createdAt || now);
+      const remainingSec = Math.max(0, 15 - Math.floor(elapsed / 1000));
+
+      if (!acceptBtn.dataset.orderId || acceptBtn.dataset.orderId !== String(order.id)) {
+        acceptBtn.dataset.orderId = order.id;
+        acceptBtn.style.animation = "none";
+        void acceptBtn.offsetWidth;
+        acceptBtn.style.animation = `acceptCountdown ${remainingSec}s linear forwards`;
+        acceptBtn.classList.add("countdown");
+      }
+    } 
+    else if (order.status === "accepted") {
+      acceptBtn.style.display = "none";
+      acceptBtn.classList.remove("countdown");
+      acceptBtn.style.animation = "";
+      tripPanel.style.display = "block";
+    }
+
+    // Marshrut chizish (eski kod saqlangan)
+    if (lastPosition && !routeDrawn) {
+      drawRoute(lastPosition.lat, lastPosition.lng, order.lat, order.lng);
+    }
   }, 2000);
 }
+
 
 function syncTrip() {
   fetch(API_URL + "/api/trip/update", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
+	  driverId: userId,           // ← MUHIM qo‘shildi
       status: "running",
       time: document.getElementById("time").innerText,
       distance: totalDistance.toFixed(2),
@@ -1032,21 +1192,17 @@ function syncTrip() {
 
 async function acceptOrder() {
   const res = await fetch(API_URL + "/api/order/accept", {
-    method: "POST"
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ driverId: userId })
   });
 
   const data = await res.json();
-
   if (data.success) {
-    alert("✅ Buyurtma qabul qilindi");
-
-    // ❌ QABUL QILISH TUGMASI YO‘QOLSIN
-    document.getElementById("acceptBtn").style.display = "none";
-
-    // ✅ SAFAR PANELI OCHILSIN
-    document.getElementById("tripPanel").style.display = "block";
+    console.log("✅ Buyurtma qabul qilindi, interval panelni ochadi.");
   }
 }
+
 
 function hideBox() {
   document.querySelector(".box").classList.add("hidden");
@@ -1070,101 +1226,137 @@ function restoreBox() {
 function drawRoute(driverLat, driverLng, passengerLat, passengerLng) {
   if (!yMap) return;
 
-  // 🔥 AGAR YO‘L BOR BO‘LSA — QAYTA CHIZMA
-  if (routeDrawn) return;
+  // eski yo‘lni o‘chirish
+  if (route) {
+    yMap.geoObjects.remove(route);
+    route = null;
+  }
 
-  route = new ymaps.multiRouter.MultiRoute(
-    {
-      referencePoints: [
-        [driverLat, driverLng],
-        [passengerLat, passengerLng]
-      ],
-      params: {
-        routingMode: "auto"
-      }
-    },
-    {
-      boundsAutoApply: true,
-      routeActiveStrokeWidth: 5,
-      routeActiveStrokeColor: "#00ff00"
-    }
-  );
+  ymaps.route([
+    [driverLat, driverLng],
+    [passengerLat, passengerLng]
+  ]).then(r => {
 
-  yMap.geoObjects.add(route);
-  routeDrawn = true;
+    route = r;
+
+    route.getPaths().options.set({
+      strokeColor: "#0f0",
+      strokeWidth: 4
+    });
+
+    yMap.geoObjects.add(route);
+
+    routeDrawn = true;
+
+  }).catch(err => {
+    console.log("Route xato:", err);
+  });
 }
 
 let driverMarker = null;
 let passengerRoute = null;
-function watchDriverOnPassengerMap() {
-  if (passengerMapWatcher) return; // 🔒 2 marta ochilmasin
 
+async function watchDriverOnPassengerMap() {
+  if (passengerMapWatcher) return;
   passengerMapWatcher = setInterval(async () => {
-    const res = await fetch(API_URL + "/api/driver/location");
-    const driver = await res.json();
-    if (!driver || !pMap) return;
+    try {
+      const orderRes = await fetch(API_URL + "/api/order/passenger/" + window.currentOrderId);
+      const order = await orderRes.json();
 
-    const driverCoords = [driver.lat, driver.lng];
-
-    // 🚕 MARKER
-    if (!driverMarker) {
-      driverMarker = new ymaps.Placemark(
-        driverCoords,
-        { balloonContent: "🚕 Haydovchi" },
-        { preset: "islands#redTaxiIcon" }
-      );
-      pMap.geoObjects.add(driverMarker);
-    } else {
-      driverMarker.geometry.setCoordinates(driverCoords);
-    }
-
-    // 🛣 YO‘L (1 MARTA)
-    if (!passengerRoute && window.manualPassengerLocation) {
-      passengerRoute = new ymaps.multiRouter.MultiRoute(
-        {
-          referencePoints: [
-            driverCoords,
-            [window.manualPassengerLocation.lat, window.manualPassengerLocation.lng]
-          ]
-        },
-        {
-          routeActiveStrokeWidth: 5,
-          routeActiveStrokeColor: "#00ff00"
+      // 🔥 YANGI QATOR — BU MUHIM! 
+      // Agar safar tugagan bo‘lsa — hech narsa qilmaymiz, marker qayta yaratilmaydi
+      if (!order || !order.driverId || order.status === "finished" || order.status === "cancelled") {
+        return;
+      }
+	  
+	  // 🔥 YANGI: Haydovchi o‘zgardi (reassign) — eski marshrutni o‘chiramiz
+      if (order.driverId !== previousDriverId) {
+        if (passengerRoute && typeof pMap !== 'undefined') {
+          pMap.geoObjects.remove(passengerRoute);
+          passengerRoute = null;
         }
-      );
-      pMap.geoObjects.add(passengerRoute);
+        previousDriverId = order.driverId;
+        console.log("🔄 Haydovchi o‘zgardi, marshrut yangilanmoqda");
+      }
+
+      // 2. Haydovchi joylashuvini olish
+      const res = await fetch(API_URL + "/api/driver/location/" + order.driverId);
+      const driver = await res.json();
+     
+      if (!driver || !pMap) return;
+
+      const driverCoords = [driver.lat, driver.lng];
+
+      // 3. Marker yangilash
+      if (!driverMarker) {
+        driverMarker = new ymaps.Placemark(
+          driverCoords,
+          { balloonContent: "🚕 Haydovchi yo'lda" },
+          { preset: "islands#redTaxiIcon" }
+        );
+        pMap.geoObjects.add(driverMarker);
+      } else {
+        driverMarker.geometry.setCoordinates(driverCoords);
+      }
+
+      // 4. Marshrut (agar hali chizilmagan bo‘lsa)
+      if (!passengerRoute && window.manualPassengerLocation) {
+        passengerRoute = new ymaps.multiRouter.MultiRoute(
+          {
+            referencePoints: [
+              driverCoords,
+              [window.manualPassengerLocation.lat, window.manualPassengerLocation.lng]
+            ]
+          },
+          {
+            routeActiveStrokeWidth: 5,
+            routeActiveStrokeColor: "#00ff00"
+          }
+        );
+        pMap.geoObjects.add(passengerRoute);
+      }
+    } catch (error) {
+      console.error("Kuzatuvda xatolik:", error);
     }
   }, 2000);
 }
 
 
 function clearPassengerMap() {
-  // 🛑 kuzatuvni to‘xtatish
+  // 🛑 Kuzatuvni to‘xtatish
   if (passengerMapWatcher) {
     clearInterval(passengerMapWatcher);
     passengerMapWatcher = null;
   }
 
-  // 🛣 marshrut
-  if (passengerRoute && pMap) {
+  // 🛣 Marshrutni o'chirish
+  if (passengerRoute && typeof pMap !== 'undefined') {
     pMap.geoObjects.remove(passengerRoute);
     passengerRoute = null;
   }
 
-  // 🚕 haydovchi belgisi
-  if (driverMarker && pMap) {
+  // 🚕 Haydovchi markerini o'chirish
+  if (driverMarker && typeof pMap !== 'undefined') {
     pMap.geoObjects.remove(driverMarker);
     driverMarker = null;
   }
 
-  // 🔄 GPS GA QAYTISH
+  // 🔄 GPS ga qaytish
+  locationLocked = false; // 🔓 Yana joy tanlash mumkin
   useManualLocation = false;
   window.manualPassengerLocation = null;
 
-  movePassengerToGPS(); // 🔥 MANA SHU YETISHMAYOTGAN QATOR
+  // 🔥 GPS koordinatasiga o'tish
+  if (typeof movePassengerToGPS === 'function') {
+    movePassengerToGPS();
+  }
 
   console.log("🧹 Safar yakunlandi → GPS qayta ishga tushdi");
+  passengerMapWatcher = null;
+  driverMarker = null;
+  passengerRoute = null;
 }
+
 
 
 function movePassengerToGPS() {
@@ -1185,9 +1377,54 @@ function movePassengerToGPS() {
   });
 }
 
+function showAuthLoader() {
+  document.getElementById("authLoader").style.display = "block";
+  document.querySelectorAll("#authUI button").forEach(b => {
+    b.classList.add("loading");
+  });
+}
+
+function hideAuthLoader() {
+  document.getElementById("authLoader").style.display = "none";
+  document.querySelectorAll("#authUI button").forEach(b => {
+    b.classList.remove("loading");
+  });
+}
 
 
+// ====================== AUTO RESTORE (sahifa yangilansa ham davom etadi) ======================
+window.addEventListener("load", () => {
+  const savedUserId = localStorage.getItem("userId");
+  const savedRole   = localStorage.getItem("role");
 
+  if (savedUserId && savedRole) {
+    userId = parseInt(savedUserId);
+    role   = savedRole;
+
+    console.log("🔄 Auto restore:", role, userId);
+
+    // Role select va auth ni yashiramiz
+    document.getElementById("roleSelect").style.display = "none";
+    document.getElementById("authUI").style.display = "none";
+
+    if (role === "driver") {
+      document.getElementById("driverUI").style.display = "block";
+      watchOrdersForDriver();        // buyurtmalarni darhol kuzatish
+      // agar oldin online bo‘lgan bo‘lsa — yana online qilamiz
+      if (isOnline) goOnline();
+    } 
+    else if (role === "passenger") {
+      document.getElementById("passengerUI").style.display = "block";
+      locatePassenger();
+    } 
+    else if (role === "admin") {
+      document.getElementById("adminUI").style.display = "block";
+    }
+  }
+});
+
+// login va register funksiyalarida role ni ham saqlaymiz
+// (sizda allaqachon userId bor, shu joylarni yangilang)
 
 
 
@@ -1201,24 +1438,29 @@ let tripWatchInterval = null;
 
 function watchCurrentTrip() {
   if (tripWatchInterval) return;
-
   tripWatchInterval = setInterval(async () => {
-    const orderRes = await fetch(API_URL + "/api/order/current");
-    const tripRes  = await fetch(API_URL + "/api/trip/current");
-
+    const orderRes = await fetch(API_URL + "/api/order/passenger/" + window.currentOrderId);
     const order = await orderRes.json();
-    const trip  = await tripRes.json();
 
     const el = document.getElementById("tripInfo");
 
-    // ⏳ buyurtma yuborilgan
-    if (order && order.status === "waiting") {
+    if (!order || !order.driverId) {
+      el.innerHTML = "<p>🚕 Hozircha faol safar yo‘q</p>";
+      return;
+    }
+
+    // 🔥 YANGI — faqat o‘z haydovchining safarini olamiz
+    const tripRes = await fetch(API_URL + "/api/trip/driver/" + order.driverId);
+    const trip = await tripRes.json();
+
+    // ⏳ buyurtma kutish
+    if (order.status === "waiting") {
       el.innerHTML = "<p>⏳ Haydovchi javobi kutilmoqda...</p>";
       return;
     }
 
     // 🚕 haydovchi yo‘lda
-    if (order && order.status === "accepted" && !trip) {
+    if (order.status === "accepted" && !trip) {
       el.innerHTML = "<p>🚕 Haydovchi yo‘lda</p>";
       return;
     }
@@ -1234,26 +1476,20 @@ function watchCurrentTrip() {
       return;
     }
 
-   // 🏁 safar tugadi → avtomatik tozalash
-if (!trip && !order) {
-  el.innerHTML = "<p>🏁 Safar yakunlandi</p>";
-
-  // 🔥 XARITANI AVTOMATIK TOZALASH
-  clearPassengerMap();
-
-  clearInterval(tripWatchInterval);
-  tripWatchInterval = null;
-  return;
-}
-
-
-    el.innerHTML = "<p>🚕 Hozircha faol safar yo‘q</p>";
+    // 🏁 safar tugadi
+    if (!trip || order.status === "finished") {
+      el.innerHTML = "<p>🏁 Safar yakunlandi</p>";
+      clearPassengerMap();
+      clearInterval(tripWatchInterval);
+      tripWatchInterval = null;
+      return;
+    }
   }, 2000);
 }
-
 
 
 </script>
 </body>
 
 </html>
+
