@@ -235,7 +235,7 @@ button.loading {
   
     <div class="box">
     
-    <h2>🚕JAXOTAXI(GPS)</h2>
+   
   
  <div id="roleSelect">
      <h3>Kim sifatida kirasiz?</h3>
@@ -289,6 +289,10 @@ button.loading {
 
   <p>📍 Yo‘lovchi joylashuvi:</p>
   <p id="orderLocation"></p>
+  <!-- 🔥 YANGI: MARSHRUT MASOFASI -->
+<p style="font-size:1.2rem; margin:10px 0; color:#0f0; font-weight:bold;">
+  🛣 Yo‘lovchigacha: <span id="pickupDistance">0.00</span> km
+</p>
 
   <!-- SAFAR MA'LUMOTLARI -->
   <div id="tripPanel" style="display:none">
@@ -1131,6 +1135,10 @@ function watchOrdersForDriver() {
         console.log("⏰ Timeout: Haydovchi avto OFFLINE + marshrut tozalandi");
         previousWasWaiting = false;
       }
+	  
+	  // 🔥 YANGI
+      document.getElementById("pickupDistance").innerText = "0.00";
+      routeDrawn = false;
       return;
     }
 	
@@ -1144,6 +1152,17 @@ function watchOrdersForDriver() {
     box.style.display = "block";
     document.getElementById("orderLocation").innerText =
       `Lat: ${order.lat.toFixed(5)}, Lng: ${order.lng.toFixed(5)}`;
+	  
+	  // 🔥 2. REAL VAQTDA MASOFA YANGILANISHI (har 2 sekundda)
+if (lastPosition && order) {
+    const currentDist = haversine(
+        lastPosition.lat,
+        lastPosition.lng,
+        order.lat,
+        order.lng
+    );
+    document.getElementById("pickupDistance").innerText = currentDist.toFixed(2);
+}
 
     if (order.status === "waiting") {
       acceptBtn.style.display = "block";
@@ -1247,6 +1266,18 @@ function drawRoute(driverLat, driverLng, passengerLat, passengerLng) {
     yMap.geoObjects.add(route);
 
     routeDrawn = true;
+	
+	 // 🔥 YANGI: HAQIQIY YO‘L MASOFASI (Yandexdan olingan)
+    const path = r.getPaths().get(0);
+    if (path) {
+      const lengthMeters = path.getLength();           // metrda
+      const lengthKm = (lengthMeters / 1000).toFixed(2);
+      
+      const distEl = document.getElementById("pickupDistance");
+      if (distEl) distEl.innerText = lengthKm;
+      
+      console.log(`🛣 Marshrut masofasi: ${lengthKm} km`);
+    }
 
   }).catch(err => {
     console.log("Route xato:", err);
