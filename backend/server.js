@@ -426,7 +426,7 @@ function reassignOrder(order) {
   }
 }
 
-// Har 10 sekundda tekshirish (bu qism o‘zgarmaydi)
+// Har 10 sekundda tekshirish (bu qism o‘zgarmasin)
 setInterval(() => {
   const now = Date.now();
   for (let i = orders.length - 1; i >= 0; i--) {
