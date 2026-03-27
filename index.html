@@ -116,6 +116,7 @@
   position: absolute;
   inset: 0;
   z-index: 1;
+  touch-action: none;        /* BU xaritani burish uchun */
 }
 
 
@@ -392,16 +393,8 @@ const API_URL =
   location.hostname === "localhost"
     ? "http://localhost:3000"
     : "https://oli-mtaxi-backend.onrender.com";
-  
-  let fullRoutePoints = [];      // bir marta hisoblangan to‘liq marshrut nuqtalari
-  
-  let currentOrder = null;     // ← YANGI
-  
-  let routeDrawingInProgress = false;   // ← YANGI global o‘zgaruvchi (script boshida qo‘shing)
-  
-  let currentRouteLine = null;   // jonli (qisqaradigan) Polyline
 
-  let routeInitialized = false;  // yo‘nalish bir marta chizilganmi?
+  let routeDrawn = false;
 
   let useManualLocation = false;
 
@@ -587,11 +580,6 @@ fetch(API_URL + "/api/driver/location", {
 })
 });
 
-// 🔥 YANGI: Haydovchi yaqinlashgani sari bosib o‘tilgan yo‘lni xaritadan o‘chiramiz
-if (routeInitialized) {
-  updateRemainingRoute(latitude, longitude);
-}
-
 
   } //funksiya tugashdi
 
@@ -729,18 +717,12 @@ function goOffline() {
     // Agar "OK" bossa — pastdagi kod ishlaydi
   }
   
- // xaritani tozalash
-if (currentRouteLine && yMap) {
-  yMap.geoObjects.remove(currentRouteLine);
-  currentRouteLine = null;
-}
-fullRoutePoints = [];
-routeInitialized = false;
-routeDrawingInProgress = false;
-if (route && yMap) {
-  yMap.geoObjects.remove(route);
-  route = null;
-}
+   // 🔥 xaritani tozalash 
+  if (route && yMap) {
+    yMap.geoObjects.remove(route);
+    route = null;
+  }
+  routeDrawn = false;
 
   // ====================== ASOSIY KOD (eski kod) ======================
   isOnline = false;
@@ -781,7 +763,10 @@ function initMap(lat, lng) {
     yMap = new ymaps.Map("map", {
       center: [lat, lng],
       zoom: 16,
-      controls: []
+      controls: [],
+      behaviors: ["drag", "multiTouch", "scrollZoom", "dblClickZoom"]  // ← qo‘shildi
+     }, {
+      suppressMapRotation: false   // shimolni qulflamaslik
     });
 
     driverPlacemark = new ymaps.Placemark(
@@ -868,19 +853,12 @@ fetch(API_URL + "/api/trip", {
     yMap.geoObjects.remove(route);
     route = null;
   }
-  
-  if (currentRouteLine && yMap) {
-  yMap.geoObjects.remove(currentRouteLine);
-  currentRouteLine = null;
-}
-fullRoutePoints = [];
-routeInitialized = false;
-routeDrawingInProgress = false;
     // 3. MUHIM: Eski intervalni tozalab, yangidan buyurtma kutishni boshlash
   if (orderWatcher) clearInterval(orderWatcher);
   orderWatcher = null;
   watchOrdersForDriver(); 
 
+  routeDrawn = false;
    openEndTripModal();
   reset();
   document.getElementById("orderBox").style.display = "none";
@@ -1144,7 +1122,6 @@ function watchOrdersForDriver() {
     const tripPanel = document.getElementById("tripPanel");
 
     if (!order) {
-	  currentOrder = null;                    // ← YANGI
       box.style.display = "none";
       acceptBtn.classList.remove("countdown");
       acceptBtn.style.animation = "";
@@ -1154,7 +1131,7 @@ function watchOrdersForDriver() {
         yMap.geoObjects.remove(route);
         route = null;
       }
-     
+      routeDrawn = false;
 
       if (previousWasWaiting) {
         document.getElementById("goOnlineBtn").style.display = "block";
@@ -1163,20 +1140,11 @@ function watchOrdersForDriver() {
         previousWasWaiting = false;
       }
 	  
-	  if (currentRouteLine && yMap) {
-        yMap.geoObjects.remove(currentRouteLine);
-        currentRouteLine = null;
-      }
-        fullRoutePoints = [];
-        routeInitialized = false;
-	  
 	  // 🔥 YANGI
       document.getElementById("pickupDistance").innerText = "0.00";
       routeDrawn = false;
       return;
     }
-	
-	currentOrder = order;                     // ← YANGI
 	
 	 // waiting bo‘lsa flagni o‘rnatamiz
     if (order.status === "waiting") {
@@ -1223,10 +1191,10 @@ if (lastPosition && order) {
       tripPanel.style.display = "block";
     }
 
-   // 🔥 O‘ZGARTIRILDI: Marshrut faqat BUYURTMANI QABUL QILGANDAN KEYIN va faqat 1 marta chiziladi
-if (lastPosition && order.status === "accepted" && !routeInitialized) {
-  drawRoute(lastPosition.lat, lastPosition.lng, order.lat, order.lng);
-}
+    // Marshrut chizish (eski kod saqlangan)
+    if (lastPosition && !routeDrawn) {
+      drawRoute(lastPosition.lat, lastPosition.lng, order.lat, order.lng);
+    }
   }, 2000);
 }
 
@@ -1281,125 +1249,43 @@ function restoreBox() {
 function drawRoute(driverLat, driverLng, passengerLat, passengerLng) {
   if (!yMap) return;
 
-  // 1. Allaqachon chizilgan bo‘lsa yoki hozir chizilayotgan bo‘lsa — hech nima qilmaymiz
-  if (routeInitialized || routeDrawingInProgress) {
-    return;
-  }
-
-  // 2. Juda yaqin bo‘lsa chizmang
-  const dist = haversine(driverLat, driverLng, passengerLat, passengerLng);
-  if (dist < 0.05) {
-    console.log("📍 Haydovchi va yo‘lovchi juda yaqin – marshrut chizilmaydi");
-    routeInitialized = false;
-    return;
-  }
-
-  routeDrawingInProgress = true;   // ← himoya
-
-  console.log("🛣 Marshrut bir marta hisoblanmoqda...");
-
-  // Eski chiziqlarni tozalash
-  if (currentRouteLine) {
-    yMap.geoObjects.remove(currentRouteLine);
-    currentRouteLine = null;
-  }
+  // eski yo‘lni o‘chirish
   if (route) {
     yMap.geoObjects.remove(route);
     route = null;
   }
 
-  const multiRoute = new ymaps.multiRouter.MultiRoute({
-    referencePoints: [
-      [driverLat, driverLng],
-      [passengerLat, passengerLng]
-    ]
-  }, {
-    routeActiveStrokeWidth: 4,
-    routeActiveStrokeColor: "#0f0",
-    routeActiveStrokeOpacity: 0.85
-  });
+  ymaps.route([
+    [driverLat, driverLng],
+    [passengerLat, passengerLng]
+  ]).then(r => {
 
-  yMap.geoObjects.add(multiRoute);
-  route = multiRoute;   // tozalash uchun saqlaymiz
+    route = r;
 
-  // Marshrut tayyor bo‘lganda
-  multiRoute.model.events.add("ready", () => {
-    try {
-      const path = multiRoute.getPaths().get(0);
-      if (!path || !path.geometry) return;
+    route.getPaths().options.set({
+      strokeColor: "#0f0",
+      strokeWidth: 4
+    });
 
-      fullRoutePoints = path.geometry.getCoordinates();
+    yMap.geoObjects.add(route);
 
-      const lengthKm = (path.getLength() / 1000).toFixed(2);
-      document.getElementById("pickupDistance").innerText = lengthKm;
-
-      console.log(`✅ Yo‘nalish BIR MARTA chizildi! Masofa: ${lengthKm} km`);
-
-      // Qisqartiriladigan chiziq (Polyline)
-      currentRouteLine = new ymaps.Polyline(fullRoutePoints, {}, {
-        strokeColor: "#0f0",
-        strokeWidth: 4,
-        strokeOpacity: 0.85
-      });
-      yMap.geoObjects.add(currentRouteLine);
-
-      routeInitialized = true;
-      routeDrawingInProgress = false;   // ← himoyani ochamiz
-
-      // MultiRoute ni olib tashlaymiz (faqat Polyline qoladi)
-      yMap.geoObjects.remove(multiRoute);
-
-    } catch (e) {
-      console.error("MultiRoute xato:", e);
-      routeDrawingInProgress = false;
+    routeDrawn = true;
+	
+	 // 🔥 YANGI: HAQIQIY YO‘L MASOFASI (Yandexdan olingan)
+    const path = r.getPaths().get(0);
+    if (path) {
+      const lengthMeters = path.getLength();           // metrda
+      const lengthKm = (lengthMeters / 1000).toFixed(2);
+      
+      const distEl = document.getElementById("pickupDistance");
+      if (distEl) distEl.innerText = lengthKm;
+      
+      console.log(`🛣 Marshrut masofasi: ${lengthKm} km`);
     }
+
+  }).catch(err => {
+    console.log("Route xato:", err);
   });
-}
-
-function updateRemainingRoute(currentLat, currentLng) {
-  if (!routeInitialized || !fullRoutePoints || fullRoutePoints.length < 2 || !currentRouteLine || !yMap) return;
-
-  // Haydovchiga eng yaqin nuqtani topamiz
-  let minDist = Infinity;
-  let closestIndex = 0;
-  for (let i = 0; i < fullRoutePoints.length; i++) {
-    const [plat, plng] = fullRoutePoints[i];
-    const d = haversine(currentLat, currentLng, plat, plng);
-    if (d < minDist) {
-      minDist = d;
-      closestIndex = i;
-    }
-  }
-
-  const remainingPoints = fullRoutePoints.slice(closestIndex);
-
-  // Yetib keldikmi?
-  if (remainingPoints.length < 2) {
-    if (currentRouteLine) yMap.geoObjects.remove(currentRouteLine);
-    currentRouteLine = null;
-    return;
-  }
-
-  // Eski chiziqni o‘chiramiz
-  yMap.geoObjects.remove(currentRouteLine);
-
-  // Qolgan yo‘lni yangidan chizamiz (bosib o‘tilgan qism yo‘qoladi)
-  currentRouteLine = new ymaps.Polyline(remainingPoints, {}, {
-    strokeColor: "#0f0",
-    strokeWidth: 4,
-    strokeOpacity: 0.85
-  });
-  yMap.geoObjects.add(currentRouteLine);
-
-  // Qolgan masofani hisoblaymiz va ko‘rsatamiz
-  let remainingKm = 0;
-  for (let i = 1; i < remainingPoints.length; i++) {
-    const [lat1, lon1] = remainingPoints[i - 1];
-    const [lat2, lon2] = remainingPoints[i];
-    remainingKm += haversine(lat1, lon1, lat2, lon2);
-  }
-  const distEl = document.getElementById("pickupDistance");
-  if (distEl) distEl.innerText = remainingKm.toFixed(2);
 }
 
 let driverMarker = null;
@@ -1641,4 +1527,3 @@ function watchCurrentTrip() {
 </body>
 
 </html>
-
