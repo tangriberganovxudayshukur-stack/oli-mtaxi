@@ -763,26 +763,39 @@ function initMap(lat, lng) {
     yMap = new ymaps.Map("map", {
       center: [lat, lng],
       zoom: 16,
-      controls: [],
-      behaviors: ["drag", "multiTouch", "scrollZoom", "dblClickZoom"]  // ← qo‘shildi
-     }, {
-      suppressMapRotation: false   // shimolni qulflamaslik
+      controls: []                    // boshqaruv tugmalari yo‘q
+    }, {
+      // 🔥 Bu eng muhim: xaritani burishga ruxsat beradi
+      suppressMapRotation: false
     });
 
+    // 🔥 Behaviors ni to‘g‘ri yoqamiz (burish + zoom + drag)
+    yMap.behaviors.enable([
+      "drag",          // surish
+      "multiTouch",    // ikkita barmoq bilan burish + pinch zoom
+      "scrollZoom",    // sichqoncha g‘ildiragi bilan zoom
+      "dblClickZoom"   // ikki marta bosish bilan zoom
+    ]);
+
+    // Haydovchi markeri
     driverPlacemark = new ymaps.Placemark(
       [lat, lng],
       { balloonContent: "🚕 Siz shu yerdasiz" },
       { preset: "islands#greenDotIcon" }
     );
-
     yMap.geoObjects.add(driverPlacemark);
+
+    console.log("✅ Xarita to‘liq tayyor (burish yoqildi)");
   });
-document.getElementById("mapLoading")?.remove();
 
-setTimeout(() => {
-  yMap.container.fitToViewport();
-}, 300);
+  // Loader ni o‘chirish
+  const loadingEl = document.getElementById("mapLoading");
+  if (loadingEl) loadingEl.remove();
 
+  // Xaritani to‘g‘ri joylashtirish
+  setTimeout(() => {
+    if (yMap) yMap.container.fitToViewport();
+  }, 300);
 }
 
 let role = null;
