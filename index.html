@@ -117,6 +117,8 @@
   inset: 0;
   z-index: 1;
   touch-action: none;        /* BU xaritani burish uchun */
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 
@@ -694,6 +696,9 @@ fetch(API_URL + "/api/driver/online", {
 
   enableWakeLock();
   enableTracking();   // 👈 JOYLASHUV SHU YERDA
+  if (yMap) {
+  yMap.container.fitToViewport();
+}
   watchOrdersForDriver(); // 📦 BUYURTMANI KUZATISH
   console.log("Haydovchi LINYAGA CHIQDI");
 }
