@@ -116,9 +116,6 @@
   position: absolute;
   inset: 0;
   z-index: 1;
-  touch-action: none;        /* BU xaritani burish uchun */
-  user-select: none;
-  -webkit-user-select: none;
 }
 
 
@@ -305,7 +302,11 @@ button.loading {
     <div class="price">💰 <span id="price">3000</span> so‘m</div>
 
     <button id="tripBtn" onclick="toggleTrip()">▶ Start</button>
+	<button onclick="openNavigator()" 
+        style="background:#0f0;color:#000;margin-top:10px;width:100%;">
+        🧭 Navigator </button>
     <button onclick="endTrip()">🏁 Safarni yakunlash</button>
+	
 
   </div>
 
@@ -411,6 +412,8 @@ const API_URL =
   let userId = null;
   
   let previousDriverId = null;
+  
+  let currentOrder = null;
 
   async function enableWakeLock() {
 
@@ -696,9 +699,6 @@ fetch(API_URL + "/api/driver/online", {
 
   enableWakeLock();
   enableTracking();   // 👈 JOYLASHUV SHU YERDA
-  if (yMap) {
-  yMap.container.fitToViewport();
-}
   watchOrdersForDriver(); // 📦 BUYURTMANI KUZATISH
   console.log("Haydovchi LINYAGA CHIQDI");
 }
@@ -768,39 +768,23 @@ function initMap(lat, lng) {
     yMap = new ymaps.Map("map", {
       center: [lat, lng],
       zoom: 16,
-      controls: []                    // boshqaruv tugmalari yo‘q
-    }, {
-      // 🔥 Bu eng muhim: xaritani burishga ruxsat beradi
-      suppressMapRotation: false
+      controls: []
     });
 
-    // 🔥 Behaviors ni to‘g‘ri yoqamiz (burish + zoom + drag)
-    yMap.behaviors.enable([
-      "drag",          // surish
-      "multiTouch",    // ikkita barmoq bilan burish + pinch zoom
-      "scrollZoom",    // sichqoncha g‘ildiragi bilan zoom
-      "dblClickZoom"   // ikki marta bosish bilan zoom
-    ]);
-
-    // Haydovchi markeri
     driverPlacemark = new ymaps.Placemark(
       [lat, lng],
       { balloonContent: "🚕 Siz shu yerdasiz" },
       { preset: "islands#greenDotIcon" }
     );
+
     yMap.geoObjects.add(driverPlacemark);
-
-    console.log("✅ Xarita to‘liq tayyor (burish yoqildi)");
   });
+document.getElementById("mapLoading")?.remove();
 
-  // Loader ni o‘chirish
-  const loadingEl = document.getElementById("mapLoading");
-  if (loadingEl) loadingEl.remove();
+setTimeout(() => {
+  yMap.container.fitToViewport();
+}, 300);
 
-  // Xaritani to‘g‘ri joylashtirish
-  setTimeout(() => {
-    if (yMap) yMap.container.fitToViewport();
-  }, 300);
 }
 
 let role = null;
@@ -1164,6 +1148,8 @@ function watchOrdersForDriver() {
       return;
     }
 	
+	currentOrder = order;
+	
 	 // waiting bo‘lsa flagni o‘rnatamiz
     if (order.status === "waiting") {
       previousWasWaiting = true;
@@ -1444,6 +1430,36 @@ function hideAuthLoader() {
   });
 }
 
+function openNavigator() {
+  if (!currentOrder || !currentOrder.lat || !currentOrder.lng) {
+    alert("Buyurtma koordinatalari hali mavjud emas.\nIltimos, biroz kutib turing.");
+    return;
+  }
+
+  const lat = currentOrder.lat;
+  const lng = currentOrder.lng;
+
+  // Yandex Navigator deep link (eng ishonchli)
+  const deepLink = `yandexnavi://build_route?lat_to=${lat}&lon_to=${lng}`;
+
+  // Play Store havolasi (O‘zbekistonda ko‘pchilik Android)
+  const installUrl = "https://play.google.com/store/apps/details?id=ru.yandex.yandexnavi";
+
+  // 1.5 soniya ichida ilova ochilmasa → o‘rnatishni taklif qilamiz
+  const timeout = setTimeout(() => {
+    if (confirm("Yandex Navigator o‘rnatilmagan ko‘rinadi.\n\nAynan Yandex Navigator — eng ishonchli navigator.\n\nO‘rnatishni xohlaysizmi?")) {
+      window.open(installUrl, "_blank");
+    }
+  }, 1500);
+
+  // Ilovani ochishga harakat qilamiz
+  window.location.href = deepLink;
+
+  // Agar ilova ochilsa — sahifa blur bo‘ladi va timeout to‘xtaydi
+  window.addEventListener("blur", () => {
+    clearTimeout(timeout);
+  }, { once: true });
+}
 
 // ====================== AUTO RESTORE (sahifa yangilansa ham davom etadi) ======================
 window.addEventListener("load", () => {
