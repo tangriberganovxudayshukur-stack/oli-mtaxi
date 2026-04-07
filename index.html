@@ -1499,7 +1499,7 @@ function callPassenger() {
     return;
   }
 
-  const phone = currentOrder.passengerPhone.replace(/\D/g, ''); // faqat raqam qoldiradi
+  const phone = currentOrder.passengerPhone.replace(/[^\d+]/g, ''); // faqat raqam va + belgisi qoladi
   const telLink = `tel:${phone}`;
 
   console.log("📞 Qo‘ng‘iroq ochilmoqda:", telLink);
