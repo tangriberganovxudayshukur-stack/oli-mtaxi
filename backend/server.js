@@ -59,7 +59,18 @@ app.post("/api/trip", (req, res) => {
 
 // ==================== BUYURTMA YARATISH (ENG MUHIM O‘ZGARISH) ====================
 app.post("/api/order", (req, res) => {
-  const { lat, lng } = req.body;
+ const { lat, lng, passengerId } = req.body;   // ← YANGI: passengerId qabul qilamiz
+ 
+  if (!passengerId) {
+    return res.json({ success: false, error: "passengerId kerak" });
+  }
+
+  // Yo‘lovchi ma'lumotlarini users.json dan o‘qiymiz
+  const usersDB = JSON.parse(fs.readFileSync("./users.json"));
+  const passenger = usersDB.users.find(u => u.id == passengerId);
+  if (!passenger) {
+    return res.json({ success: false, error: "Yo‘lovchi topilmadi" });
+  }
 
   // 🔥 YANGI FILTR — busy bo‘lmagan VA "waiting" buyurtmasi yo‘q haydovchilar
   const eligibleDrivers = drivers.filter(driver => {
@@ -103,7 +114,9 @@ app.post("/api/order", (req, res) => {
     lng,
     driverId: bestDriver.id,
     status: "waiting",
-    createdAt: Date.now()
+    createdAt: Date.now(),
+	 passengerId: passengerId,           // ← YANGI
+    passengerPhone: passenger.phone     // ← YANGI: telefon raqam saqlanadi
   };
 
   orders.push(order);
