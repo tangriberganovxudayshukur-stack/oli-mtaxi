@@ -302,9 +302,8 @@ button.loading {
     <div class="price">💰 <span id="price">3000</span> so‘m</div>
 
     <button id="tripBtn" onclick="toggleTrip()">▶ Start</button>
-	<button onclick="openNavigator()" 
-        style="background:#0f0;color:#000;margin-top:10px;width:100%;">
-        🧭 Navigator </button>
+	<button onclick="openNavigator()">🧭 Navigator</button>
+	<button onclick="callPassenger()">📞 Tel</button>
     <button onclick="endTrip()">🏁 Safarni yakunlash</button>
 	
 
@@ -1093,7 +1092,8 @@ async function orderTaxi() {
     body: JSON.stringify({
       lat,
       lng,
-      createdAt: Date.now()
+      createdAt: Date.now(),
+	   passengerId: userId   // ← MUHIM YANGI QATOR
     })
   });
 
@@ -1491,6 +1491,20 @@ window.addEventListener("load", () => {
     }
   }
 });
+
+// ==================== YANGI FUNKSIYA ====================
+function callPassenger() {
+  if (!currentOrder || !currentOrder.passengerPhone) {
+    alert("❌ Yo‘lovchi raqami topilmadi.\n\nIltimos, biroz kutib turing yoki sahifani yangilang.");
+    return;
+  }
+
+  const phone = currentOrder.passengerPhone.replace(/\D/g, ''); // faqat raqam qoldiradi
+  const telLink = `tel:${phone}`;
+
+  console.log("📞 Qo‘ng‘iroq ochilmoqda:", telLink);
+  window.location.href = telLink;
+}
 
 // login va register funksiyalarida role ni ham saqlaymiz
 // (sizda allaqachon userId bor, shu joylarni yangilang)
