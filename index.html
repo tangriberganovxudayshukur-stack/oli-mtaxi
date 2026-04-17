@@ -249,8 +249,14 @@ button.loading {
 <div id="authUI" style="display:none">
   <h3 id="authTitle">Hisobga kirish</h3>
 
-  <input id="phone" placeholder="📱 Telefon raqam" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;">
-  <input id="password" type="password" placeholder="🔒 Parol" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;">
+  <input 
+    id="phone" 
+    type="tel"
+    value="+998" 
+    style="width:100%;padding:10px;margin:6px 0;border-radius:8px;"
+  >
+ 
+ <input id="password" type="password" placeholder="🔒 Parol" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;">
 
   <button onclick="login()">🔑 Kirish</button>
   <button onclick="register()">📝 Ro‘yxatdan o‘tish</button>
@@ -907,11 +913,11 @@ function goBack() {
 }
 
 async function login() {
-  showAuthLoader();
-
-  const phone = document.getElementById("phone").value;
+  const phone = document.getElementById("phone").value.trim();
   const password = document.getElementById("password").value;
-
+  
+  showAuthLoader();
+  
   try {
     const res = await fetch(API_URL + "/api/login", {
       method: "POST",
@@ -947,12 +953,11 @@ async function register() {
     alert("Avval rol tanlang");
     return;
   }
-
-  showAuthLoader();
-
-  const phone = document.getElementById("phone").value;
+  const phone = document.getElementById("phone").value.trim();
   const password = document.getElementById("password").value;
-
+  
+  showAuthLoader();
+  
   try {
     const res = await fetch(API_URL + "/api/register", {
       method: "POST",
@@ -1506,10 +1511,68 @@ function callPassenger() {
   window.location.href = telLink;
 }
 
-// login va register funksiyalarida role ni ham saqlaymiz
-// (sizda allaqachon userId bor, shu joylarni yangilang)
+// ==================== +998 MAJBURIY + 9 TA RAQAM ====================
+function setupPhoneInput() {
+  const input = document.getElementById('phone');
+  if (!input) return;
 
+  // Dastlab +998 qo‘yish
+  input.value = '+998';
 
+  // Har bir kiritishda tekshirish
+  input.addEventListener('input', function () {
+    let val = this.value;
+
+    // +998 ni majburiy saqlash
+    if (!val.startsWith('+998')) {
+      val = '+998' + val.replace(/[^0-9]/g, '');
+    }
+
+    // +998 dan keyin faqat raqamlar
+    const digits = val.substring(4).replace(/[^0-9]/g, '');
+    
+    // Maksimal 9 ta raqam
+    this.value = '+998' + digits.substring(0, 9);
+  });
+
+  // Backspace bilan +998 ni o‘chirishni taqiqlash
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Backspace' && this.selectionStart <= 4) {
+      e.preventDefault();
+    }
+  });
+
+  // Foydalanuvchi fokus qilganda kursorni +998 dan keyin qo‘yish
+  input.addEventListener('focus', function () {
+    if (this.value === '+998') {
+      this.setSelectionRange(4, 4);
+    }
+  });
+  // 🔥 ASOSIY TUZATISH: blur + alert + focus
+  input.addEventListener('blur', function () {
+    const digits = this.value.substring(4).replace(/[^0-9]/g, '');
+
+    if (digits.length < 9) {
+      alert("❌ Telefon raqami to‘liq emas!\n\n+998 dan keyin aniq 9 ta raqam bo‘lishi shart.\n\niltimos, tuzatish uchun.\n\nOK ni ikki marta bosing.");
+
+      // Brauzer fokusni qaytarish uchun setTimeout ishlatamiz
+      setTimeout(() => {
+        this.focus();
+        this.setSelectionRange(4, this.value.length); // raqam qismiga kursorni qo‘yamiz
+      }, 10);
+    }
+  });
+}
+
+// Sahifa yuklanganda va rol tanlanganda ishga tushirish
+window.addEventListener('load', setupPhoneInput);
+
+// Role tanlash funksiyasini ham yangilaymiz (xavfsizlik uchun)
+const originalSetRole = window.setRole || function(){};
+window.setRole = function(selectedRole) {
+  originalSetRole(selectedRole);
+  setTimeout(setupPhoneInput, 100);
+};
 
 //   npx http-server .                         bu front server uchun powershel kodi faqat lakal
 //   npx http-server . -a 0.0.0.0 -p 8080      bu lakal ham tashqi qurulmalarga pwsh kodi 
