@@ -134,7 +134,7 @@
   margin: 8px 0;
   font-size: 1.1rem;
 }
-//MODAL OYNASI DIZAYNI BOSHLANDI
+/*MODAL OYNASI DIZAYNI BOSHLANDI*/
 .modal {
   position: fixed;
   inset: 0;
@@ -258,6 +258,14 @@ button.loading {
  
  <input id="password" type="password" placeholder="🔒 Parol" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;">
 
+ <!-- 🔥 YANGI INPUT: Taklif qilgan ID -->
+  <input 
+    id="referrerId" 
+    type="number" 
+    placeholder="👤 Taklif qilgan ID (ixtiyoriy)" 
+    style="width:100%;padding:10px;margin:6px 0;border-radius:8px;"
+  >
+
   <button onclick="login()">🔑 Kirish</button>
   <button onclick="register()">📝 Ro‘yxatdan o‘tish</button>
   <div id="authLoader" class="loader"></div>
@@ -270,7 +278,9 @@ button.loading {
                         
                 <div id="netStatus" class="status offline">🔴 Offline</div>
 
-               
+                <div id="walletDisplayDriver" class="row" style="font-size:1.3rem;color:#0f0;margin:10px 0;">
+               💰 Xamyon: <span id="driverBalance">0</span> so‘m
+               </div>
 
                 <div id="mapLoading">🗺 Xarita yuklanmoqda...</div>
 
@@ -333,6 +343,9 @@ button.loading {
     <p>⏱ Vaqt: <span id="mTime"></span></p>
     <p>📏 Masofa: <span id="mDistance"></span> km</p>
     <p>💰 Narx: <span id="mPrice"></span> so‘m</p>
+	 <!-- 🔥 YANGI QATORLAR -->
+    <p>📊 Komissiya (12%): <span id="mCommission">0</span> so'm</p>
+    <p>💳 Sizga: <span id="mNetIncome">0</span> so'm</p>
 
     <button onclick="closeEndTripModal()">Yopish</button>
   </div>
@@ -350,7 +363,9 @@ button.loading {
 
 <div id="passengerUI" style="display:none">
   <h3>🧍 Yo‘lovchi paneli</h3>
-
+             <div id="walletDisplayPassenger" class="row" style="font-size:1.3rem;color:#0f0;margin:10px 0;">
+             💰 Xamyon: <span id="passengerBalance">0</span> so‘m
+             </div>
   <div class="row">📍 Sizning joylashuvingiz</div>
   <div id="pMap" style="height:300px;border-radius:12px;"></div>
 
@@ -376,6 +391,10 @@ button.loading {
                          <div id="adminUI" style="display:none">
                          <h3>🛠 Admin paneli</h3>
                          <p>Haydovchilar va buyurtmalar</p>
+						 // adminUI div ichiga qo‘shiladigan HTML
+                         <div id="walletDisplayAdmin" class="row" style="font-size:1.3rem;color:#0f0;margin:10px 0;">
+                          💰 Admin Xamyoni: <span id="adminBalance">0</span> so‘m
+                         </div>
 						 <button class="backBtn" onclick="goBack()">⬅ Orqaga</button>
 
                          </div>
@@ -518,24 +537,21 @@ function stopTrip() {
   interval = null;
 }
 
-
-  function reset() {
-
-     stopTrip();
-
-    seconds = 0;
-
-    totalDistance = 0;
-
-    lastPosition = null;
-
-    document.getElementById("time").innerText = "00:00";
-
-    document.getElementById("distance").innerText = "0.00";
-
-    document.getElementById("price").innerText = startPrice;
-
-  }
+function reset() {
+  stopTrip();
+  seconds = 0;
+  totalDistance = 0;
+  lastPosition = null;
+  
+  // 🔥 MUHIM: UI elementlarini to'g'ridan-to'g'ri yangilash
+  const timeEl = document.getElementById("time");
+  const distanceEl = document.getElementById("distance");
+  const priceEl = document.getElementById("price");
+  
+  if (timeEl) timeEl.innerText = "00:00";
+  if (distanceEl) distanceEl.innerText = "0.00";
+  if (priceEl) priceEl.innerText = "3000";  // Boshlang'ich narx
+}
 
   function onPosition(position) {
 
@@ -826,6 +842,7 @@ fetch(API_URL + "/api/trip", {
   body: JSON.stringify({
     role: role,
     driverId: userId,                          // ← MUHIM O‘ZGARISH!
+	 passengerId: currentOrder?.passengerId,   // ← YANGI QATOR
     time: document.getElementById("time").innerText,
     distance: totalDistance.toFixed(2),
     price: document.getElementById("price").innerText
@@ -834,6 +851,26 @@ fetch(API_URL + "/api/trip", {
   .then(res => res.json())
   .then(data => {
     console.log("Backend javobi:", data);
+	
+	 // 🔥 YANGI: Komissiya haqida xabar ko'rsatish
+    if (data.commission) {
+      const commissionMsg = 
+        `✅ Safar yakunlandi!\n\n` +
+        `💰 Jami: ${data.roundedPrice} so'm\n` +
+        `📊 Komissiya (12%): ${data.commission} so'm\n` +
+        `💳 Sizga: ${data.roundedPrice - data.commission} so'm`;
+      
+      // Modalga qo'shimcha ma'lumot qo'shish
+      document.getElementById("mCommission").innerText = data.commission;
+      document.getElementById("mNetIncome").innerText = data.roundedPrice - data.commission;
+    }
+	
+	 // 🔥 YANGI: Narxni 100 ga yaxlitlab ko'rsatish
+  if (data.roundedPrice) {
+    document.getElementById("price").innerText = data.roundedPrice;
+    document.getElementById("mPrice").innerText = data.roundedPrice;
+  }
+   reset();
   })
   .catch(err => {
     console.error("Xato backendga yuborishda:", err);
@@ -867,27 +904,34 @@ fetch(API_URL + "/api/trip", {
 
   routeDrawn = false;
    openEndTripModal();
-  reset();
   document.getElementById("orderBox").style.display = "none";
-document.getElementById("tripPanel").style.display = "none";
-document.getElementById("acceptBtn").style.display = "block";
- 
+  document.getElementById("tripPanel").style.display = "none";
+  document.getElementById("acceptBtn").style.display = "block";
+  loadWallet();   // ← YANGI: haydovchi pul oldi
 }
 
 
 //MODAL OYNASI OCHISH Funksiya BOSHLANDI
 function openEndTripModal() {
-  document.getElementById("mTime").innerText =
-    document.getElementById("time").innerText;
+  const finalTime = document.getElementById("time").innerText;
+  const finalDistance = totalDistance.toFixed(2);
+  const finalPrice = document.getElementById("price").innerText;
 
-  document.getElementById("mDistance").innerText =
-    totalDistance.toFixed(2);
-
-  document.getElementById("mPrice").innerText =
-    document.getElementById("price").innerText;
+  document.getElementById("mTime").innerText = finalTime;
+  document.getElementById("mDistance").innerText = finalDistance;
+  document.getElementById("mPrice").innerText = finalPrice;
 
   document.getElementById("endTripModal").style.display = "flex";
+  
+  // 🔥 Modal yopilgandan keyin narxni tozalash
+  document.getElementById("endTripModal").addEventListener("click", function(e) {
+    if (e.target === this) {
+      reset();
+      this.style.display = "none";
+    }
+  }, { once: true });
 }
+
 //MODAL OYNASI Yopish Funksiya BOSHLANDI
 function closeEndTripModal() {
   document.getElementById("endTripModal").style.display = "none";
@@ -955,6 +999,12 @@ async function register() {
   }
   const phone = document.getElementById("phone").value.trim();
   const password = document.getElementById("password").value;
+
+   // 🔥 YANGI: Referrer ID ni olish
+  const referrerIdInput = document.getElementById("referrerId");
+  const referrerId = referrerIdInput.value.trim() 
+    ? parseInt(referrerIdInput.value.trim()) 
+    : null;  // Agar boʻsh boʻlsa null boʻladi
   
   showAuthLoader();
   
@@ -962,7 +1012,7 @@ async function register() {
     const res = await fetch(API_URL + "/api/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone, password, role })
+      body: JSON.stringify({ phone, password, role, referrerId  })
     });
 
     const data = await res.json();
@@ -977,11 +1027,15 @@ if (data.success) {
   localStorage.setItem("userId", userId);   // ← qo‘shing
   localStorage.setItem("role", role);   // ← YANGI
   role = data.user.role;
-  alert("Ro‘yxatdan o‘tildi!");
-  openRoleUI();
+   // 🔥 YANGI: Referrer bo'lsa xabar berish
+      if (data.referrer) {
+        alert(`✅ Ro‘yxatdan o‘tildi!\n👤 Sizni ${data.referrer.phone} taklif qildi`);
+      } else {
+        alert("Ro‘yxatdan o‘tildi!");
+      }
+        openRoleUI();
 }
     
-
   } catch (e) {
     alert("Server xatosi");
   }
@@ -989,25 +1043,24 @@ if (data.success) {
   hideAuthLoader();
 }
 
-
-
-
 function openRoleUI() {
   document.getElementById("authUI").style.display = "none";
 
   if (role === "driver") {
     document.getElementById("driverUI").style.display = "block";
 	watchOrdersForDriver(); // 🔥 DARROV BUYURTMA TEKSHIRADI
+	loadWallet();           // ← qo‘shing
   }
 
   if (role === "passenger") {
     document.getElementById("passengerUI").style.display = "block";
     locatePassenger();       // 📍 GPS
-   
+    loadWallet();           // ← qo‘shing
   }
 
   if (role === "admin") {
     document.getElementById("adminUI").style.display = "block";
+	 loadWallet();  // <-- SHU QATORNI QO‘SHING
   }
 }
 
@@ -1198,6 +1251,12 @@ if (lastPosition && order) {
       acceptBtn.classList.remove("countdown");
       acceptBtn.style.animation = "";
       tripPanel.style.display = "block";
+	   // 🔥 YANGI: Safar paneli ochilganda narxlarni tekshirish
+  if (!tripActive) {
+    document.getElementById("price").innerText = "3000";
+    document.getElementById("time").innerText = "00:00";
+    document.getElementById("distance").innerText = "0.00";
+  }
     }
 
     // Marshrut chizish (eski kod saqlangan)
@@ -1223,6 +1282,11 @@ function syncTrip() {
 }
 
 async function acceptOrder() {
+ // 🔥 YANGI: Buyurtma qabul qilishdan oldin narxni tozalash
+  document.getElementById("price").innerText = "3000";
+  document.getElementById("time").innerText = "00:00";
+  document.getElementById("distance").innerText = "0.00";
+  
   const res = await fetch(API_URL + "/api/order/accept", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -1255,7 +1319,7 @@ function restoreBox() {
   }, 200);
 }
 
-function drawRoute(driverLat, driverLng, passengerLat, passengerLng) {
+ function drawRoute(driverLat, driverLng, passengerLat, passengerLng) {
   if (!yMap) return;
 
   // eski yo‘lni o‘chirish
@@ -1300,7 +1364,7 @@ function drawRoute(driverLat, driverLng, passengerLat, passengerLng) {
 let driverMarker = null;
 let passengerRoute = null;
 
-async function watchDriverOnPassengerMap() {
+ async function watchDriverOnPassengerMap() {
   if (passengerMapWatcher) return;
   passengerMapWatcher = setInterval(async () => {
     try {
@@ -1366,7 +1430,7 @@ async function watchDriverOnPassengerMap() {
 }
 
 
-function clearPassengerMap() {
+ function clearPassengerMap() {
   // 🛑 Kuzatuvni to‘xtatish
   if (passengerMapWatcher) {
     clearInterval(passengerMapWatcher);
@@ -1403,7 +1467,7 @@ function clearPassengerMap() {
 
 
 
-function movePassengerToGPS() {
+ function movePassengerToGPS() {
   if (!navigator.geolocation || !pMap || !passengerPlacemark) return;
 
   navigator.geolocation.getCurrentPosition(pos => {
@@ -1421,21 +1485,21 @@ function movePassengerToGPS() {
   });
 }
 
-function showAuthLoader() {
+ function showAuthLoader() {
   document.getElementById("authLoader").style.display = "block";
   document.querySelectorAll("#authUI button").forEach(b => {
     b.classList.add("loading");
   });
 }
 
-function hideAuthLoader() {
+ function hideAuthLoader() {
   document.getElementById("authLoader").style.display = "none";
   document.querySelectorAll("#authUI button").forEach(b => {
     b.classList.remove("loading");
   });
 }
 
-function openNavigator() {
+ function openNavigator() {
   if (!currentOrder || !currentOrder.lat || !currentOrder.lng) {
     alert("Buyurtma koordinatalari hali mavjud emas.\nIltimos, biroz kutib turing.");
     return;
@@ -1498,7 +1562,7 @@ window.addEventListener("load", () => {
 });
 
 // ==================== YANGI FUNKSIYA ====================
-function callPassenger() {
+ function callPassenger() {
   if (!currentOrder || !currentOrder.passengerPhone) {
     alert("❌ Yo‘lovchi raqami topilmadi.\n\nIltimos, biroz kutib turing yoki sahifani yangilang.");
     return;
@@ -1512,7 +1576,7 @@ function callPassenger() {
 }
 
 // ==================== +998 MAJBURIY + 9 TA RAQAM ====================
-function setupPhoneInput() {
+ function setupPhoneInput() {
   const input = document.getElementById('phone');
   if (!input) return;
 
@@ -1573,6 +1637,28 @@ window.setRole = function(selectedRole) {
   originalSetRole(selectedRole);
   setTimeout(setupPhoneInput, 100);
 };
+
+// ==================== XAMYON FUNKSIYALARI ====================
+ async function loadWallet() {
+  if (!userId) return;
+  try {
+    const res = await fetch(API_URL + "/api/wallet/" + userId);
+    const data = await res.json();
+    if (data.success) {
+      const bal = Math.floor(data.balance);
+      // Haydovchi yoki yo‘lovchi uchun mos elementni yangilash
+      if (document.getElementById("driverBalance")) {
+        document.getElementById("driverBalance").innerText = bal;
+      }
+      if (document.getElementById("passengerBalance")) {
+        document.getElementById("passengerBalance").innerText = bal;
+      }
+	  if (document.getElementById("adminBalance")) {
+        document.getElementById("adminBalance").innerText = bal;
+      } 
+    }
+  } catch (e) { console.log("Xamyon yuklanmadi"); }
+}
 
 //   npx http-server .                         bu front server uchun powershel kodi faqat lakal
 //   npx http-server . -a 0.0.0.0 -p 8080      bu lakal ham tashqi qurulmalarga pwsh kodi 
