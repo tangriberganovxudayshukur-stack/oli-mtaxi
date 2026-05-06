@@ -17,42 +17,139 @@ app.use(express.json()); // JSON body ni o‘qish uchun
 // ⚡ BU YERGA SAFAR ENDPOINTLARINI QO‘SHASIZ
 
 
+// ==================== SAFARNI YAKUNLASH (XAMYON BILAN) ====================
 app.post("/api/trip", (req, res) => {
-  const { driverId } = req.body;
+  const { driverId, price, passengerId } = req.body;
+  
+   // 🔥 NARXNI 100 GA YAXLITLASH (yuqoriga)
+  const rawPrice = parseInt(price);
+  const roundedPrice = Math.ceil(rawPrice / 100) * 100;
+
+ // 🔥 YANGI: 12% KOMISSIYA HISOBLASH VA O'TKAZISH
+  const commissionRate = 0.12; // 12%
+  const commissionAmount = Math.floor(roundedPrice * commissionRate);
+  
+   // 🔥 AJRATILADIGAN BONUSLAR:
+  // 12% ning 2/12 qismi → haydovchiga
+  // 12% ning 2/12 qismi → yo‘lovchiga
+  // 12% ning 8/12 qismi → adminga qoladi
+  const driverBonus  = Math.floor(commissionAmount * (2 / 12));
+  const passengerBonus = Math.floor(commissionAmount * (2 / 12));
+  const adminNet      = commissionAmount - driverBonus - passengerBonus;
+  
+  // users.json ni o'qish
+  let usersDB = JSON.parse(fs.readFileSync("./users.json"));
+  
+  // Haydovchini topish va balansdan ayirish
+  const driver = usersDB.users.find(u => u.id == driverId);
+  if (driver) {
+    driver.balance = (driver.balance || 0) - commissionAmount;
+  }
+  
+   // 2️⃣ Haydovchiga bonus qaytarish
+  if (driver) {
+    driver.balance += driverBonus;
+  }
+
+  // 3️⃣ Yo‘lovchiga bonus berish (agar passengerId mavjud bo‘lsa)
+  if (passengerId) {
+    const passenger = usersDB.users.find(u => u.id == passengerId);
+    if (passenger) {
+      passenger.balance = (passenger.balance || 0) + passengerBonus;
+    }
+  }
+  
+  // 4️⃣ Adminga qolgan komissiya
+  const admin = usersDB.users.find(u => u.role === "admin");
+  if (admin) {
+    admin.balance = (admin.balance || 0) + adminNet;
+  }
+  
+   // ========== YANGI: BONUSDAN REFERRERGA ULUSH ==========
+  // Haydovchi bonusidan 1/5 → uning referreriga
+  if (driver && driver.referrerId) {
+    const driverReferrer = usersDB.users.find(u => u.id === driver.referrerId);
+    if (driverReferrer) {
+      const share = Math.floor(driverBonus * (1 / 5));
+      driver.balance -= share;               // haydovchidan ayiramiz
+      driverReferrer.balance = (driverReferrer.balance || 0) + share;
+      console.log(`👤 Driver referrer ${driverReferrer.id} ga ${share} so'm o'tkazildi`);
+    }
+  }
+
+  // Yo'lovchi bonusidan 1/5 → uning referreriga
+  if (passengerId) {
+    const passenger = usersDB.users.find(u => u.id == passengerId);
+    if (passenger && passenger.referrerId) {
+      const passengerReferrer = usersDB.users.find(u => u.id === passenger.referrerId);
+      if (passengerReferrer) {
+        const share = Math.floor(passengerBonus * (1 / 5));
+        passenger.balance -= share;           // yo'lovchidan ayiramiz
+        passengerReferrer.balance = (passengerReferrer.balance || 0) + share;
+        console.log(`👤 Passenger referrer ${passengerReferrer.id} ga ${share} so'm o'tkazildi`);
+      }
+    }
+  }
+  // ========== REFERRER ULUSH TUGADI ==========
+  // users.json ga saqlash
+  fs.writeFileSync("./users.json", JSON.stringify(usersDB, null, 2));
 
   // activeTrips dan o‘chirish
   if (driverId && activeTrips[driverId]) {
     delete activeTrips[driverId];
   }
 
-  // qolgan kod (orders ni finished qilish, trips.json ga yozish) — o‘zgarmaydi
+  // Buyurtmani topamiz va "finished" qilamiz
   const orderIndex = orders.findIndex(o =>
     o.driverId == driverId && (o.status === "accepted" || o.status === "waiting")
   );
+
   if (orderIndex !== -1) {
-    const finishedOrder = orders[orderIndex];
-    finishedOrder.status = "finished";
-    finishedOrder.finishedAt = Date.now();
-   
+    orders[orderIndex].status = "finished";
+    orders[orderIndex].finishedAt = Date.now();
+    orders[orderIndex].finalPrice = roundedPrice;
   }
 
-  const driver = drivers.find(d => d.id == driverId);
-  if (driver) {
-    driver.busy = false;
-    driver.availableSince = Date.now();
+  // Haydovchini bo'shatamiz
+  const driverObj = drivers.find(d => d.id == driverId);
+  if (driverObj) {
+    driverObj.busy = false;
+    driverObj.availableSince = Date.now();
   }
 
-  // trips.json ga saqlash (eski kod)
-  const trip = { ...req.body, status: "finished", endedAt: Date.now() };
+  // trips.json ga saqlash
+  const trip = {
+    ...req.body,
+    price: roundedPrice,
+    originalPrice: rawPrice,
+    commission: commissionAmount,
+    driverBonus,
+    passengerBonus,
+    adminNet,
+    commissionRate,
+    status: "finished",
+    endedAt: Date.now()
+  };
   try {
     let data = fs.existsSync("trips.json") ? JSON.parse(fs.readFileSync("trips.json", "utf-8")) : [];
     data.push(trip);
     fs.writeFileSync("trips.json", JSON.stringify(data, null, 2));
-  } catch (e) {}
+  } catch (e) {console.error("trips.json saqlashda xato:", e);}
 
-  res.json({ success: true, message: "Safar yakunlandi" });
+  // 🔥 Javobda barcha bonus ma'lumotlari
+  res.json({
+    success: true,
+    message: "Safar yakunlandi. Komissiya bo‘lindi.",
+    originalPrice: rawPrice,
+    roundedPrice,
+    commission: commissionAmount,
+    driverBonus,
+    passengerBonus,
+    adminNet,
+    driverNet: roundedPrice - commissionAmount + driverBonus,    // haydovchi qo‘liga tushgan jami
+    passengerBonus
+  });
 });
-
 
 
 
@@ -152,7 +249,7 @@ app.get("/api/trip/current", (req, res) => {
 
 app.post("/api/register", (req, res) => {
 	 console.log("📥 REGISTER:", req.body);
-  const { phone, password, role } = req.body;
+ const { phone, password, role, referrerId } = req.body; // 🔥 referrerId qo'shildi
 
   if (!phone || !password || !role) {
   return res.json({
@@ -161,33 +258,65 @@ app.post("/api/register", (req, res) => {
   });
 }
 
+ // 🔥 TELEFON RAQAMIDAN ID YARATISH (+998 dan keyingi 9 raqam)
+  const numericId = parseInt(phone.replace(/\D/g, '').slice(-9));
 
   const usersDB = JSON.parse(fs.readFileSync("./users.json"));
 
-  const exists = usersDB.users.find(u => u.phone === phone);
-  if (exists) {
-   return res.json({
-  success: false,
-  error: "Bu raqam allaqachon ro‘yxatdan o‘tgan"
-});
-
+  // 🔥 YANGI: ID bo‘yicha tekshirish
+  const existsById = usersDB.users.find(u => u.id === numericId);
+  if (existsById) {
+    return res.json({
+      success: false,
+      error: "Bu raqam allaqachon ro‘yxatdan o‘tgan"
+    });
   }
-
+  
+ // 🔥 YANGI: Referrer ID tekshirish
+  let referrer = null;
+  if (referrerId) {
+    referrer = usersDB.users.find(u => u.id === referrerId);
+    if (!referrer) {
+      return res.json({
+        success: false,
+        error: "Taklif qilgan foydalanuvchi topilmadi"
+      });
+    }
+  }
   const user = {
-    id: Date.now(),
+    id: numericId,                    // 🔥 ASOSIY O‘ZGARISH
     phone,
     password, // hozircha oddiy (keyin shifrlaymiz)
     role,
-    createdAt: new Date()
+	balance: 0,          // ← YANGI: xamyon
+	referrerId: referrerId || null,  // 🔥 YANGI: Kim taklif qilgani
+    createdAt: new Date().toISOString()
   };
 
   usersDB.users.push(user);
   fs.writeFileSync("./users.json", JSON.stringify(usersDB, null, 2));
 
- res.json({
-  success: true,
-  user: { id: user.id, phone, role }
-});
+  // 🔥 YANGI: Referrer ma'lumotini ham qaytarish
+  const response = {
+    success: true,
+    user: { 
+      id: user.id, 
+      phone, 
+      role, 
+      balance: 0,
+      referrerId: user.referrerId 
+    }
+  };
+
+  // Agar referrer bo'lsa, uning ma'lumotini ham qo'shamiz
+  if (referrer) {
+    response.referrer = {
+      id: referrer.id,
+      phone: referrer.phone
+    };
+  }
+
+  res.json(response);
 
 });
 
@@ -208,18 +337,17 @@ app.post("/api/login", (req, res) => {
   });
 }
 
-
   res.json({
     success: true,
     user: {
       id: user.id,
       phone: user.phone,
-      role: user.role
+      role: user.role,
+	  balance: user.balance || 0,   // ← YANGI
+	  referrerId: user.referrerId || null  // 🔥 YANGI
     }
   });
 });
-
-
 
 app.post("/api/trip/start", (req, res) => {
   const { driverId, ...tripData } = req.body;
@@ -451,6 +579,15 @@ setInterval(() => {
 }, 10000);
 
 console.log("🛡️ Order timeout tizimi yoqildi (15 sekund + avto offline)");
+
+// ==================== XAMYON ENDPOINTLARI ====================
+app.get("/api/wallet/:userId", (req, res) => {
+  const { userId } = req.params;
+  const usersDB = JSON.parse(fs.readFileSync("./users.json"));
+  const user = usersDB.users.find(u => u.id == userId);
+  if (!user) return res.json({ success: false, error: "Foydalanuvchi topilmadi" });
+  res.json({ success: true, balance: user.balance || 0 });
+});
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Backend running on port ${PORT}`);
