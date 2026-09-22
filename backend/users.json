@@ -1,39 +1,49 @@
 {
   "users": [
     {
-      "id": 1769278126576,
-      "phone": "+998975167605",
-      "password": "22188",
-      "role": "driver",
-      "createdAt": "2026-01-24T18:08:46.576Z"
-    },
-    {
-      "id": 1769278360313,
-      "phone": "+998906491910",
-      "password": "06257",
-      "role": "passenger",
-      "createdAt": "2026-01-24T18:12:40.313Z"
-    },
-    {
-      "id": 1770138591664,
-      "phone": "+998335167605",
-      "password": "24190",
-      "role": "driver",
-      "createdAt": "2026-02-03T17:09:51.664Z"
-    },
-    {
-      "id": 1772653914036,
+      "id": 905581910,
       "phone": "+998905581910",
-      "password": "15255",
+      "password": "1910",
       "role": "passenger",
-      "createdAt": "2026-03-04T19:51:54.036Z"
+      "balance": 0,
+      "referrerId": null,
+      "createdAt": "2026-05-05T19:28:24.953Z"
     },
     {
-      "id": 1774981790699,
-      "phone": "+998919190999",
-      "password": "27190",
+      "id": 904313797,
+      "phone": "+998904313797",
+      "password": "3797",
       "role": "passenger",
-      "createdAt": "2026-03-31T18:29:50.699Z"
+      "balance": 0,
+      "referrerId": 905581910,
+      "createdAt": "2026-05-05T19:38:20.915Z"
+    },
+    {
+      "id": 975167605,
+      "phone": "+998975167605",
+      "password": "22olimovich011988",
+      "role": "admin",
+      "balance": 10000,
+      "referrerId": null,
+      "createdAt": "2026-09-13T17:43:00.755Z"
+    },
+    {
+      "id": 919190999,
+      "phone": "+998919190999",
+      "password": "0999",
+      "role": "driver",
+      "balance": 0,
+      "referrerId": 335167605,
+      "createdAt": "2026-09-13T18:41:03.295Z"
+    },
+    {
+      "id": 335167605,
+      "phone": "+998335167605",
+      "password": "7605",
+      "role": "driver",
+      "balance": 0,
+      "referrerId": null,
+      "createdAt": "2026-09-14T18:19:30.144Z"
     }
   ]
 }
