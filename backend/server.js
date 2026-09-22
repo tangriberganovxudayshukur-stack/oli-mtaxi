@@ -42,13 +42,22 @@ app.post("/api/trip", (req, res) => {
   
   // Haydovchini topish va balansdan ayirish
   const driver = usersDB.users.find(u => u.id == driverId);
-  if (driver) {
-    driver.balance = (driver.balance || 0) - commissionAmount;
-  }
+  let balanceWentNegative = false;
+  let finalBalance = 0;
   
-   // 2️⃣ Haydovchiga bonus qaytarish
-  if (driver) {
+   if (driver) {
+    // 1. Komissiyani ayiramiz
+    driver.balance = (driver.balance || 0) - commissionAmount;
+    
+    // 2. Haydovchiga bonus qaytaramiz
     driver.balance += driverBonus;
+    
+    finalBalance = driver.balance;
+    
+    // 🔥 MANFIY BALANS TEKSHIRUVI
+    if (driver.balance < 0) {
+      balanceWentNegative = true;
+    }
   }
 
   // 3️⃣ Yo‘lovchiga bonus berish (agar passengerId mavjud bo‘lsa)
@@ -74,6 +83,8 @@ app.post("/api/trip", (req, res) => {
       driver.balance -= share;               // haydovchidan ayiramiz
       driverReferrer.balance = (driverReferrer.balance || 0) + share;
       console.log(`👤 Driver referrer ${driverReferrer.id} ga ${share} so'm o'tkazildi`);
+	   finalBalance = driver.balance;
+      if (driver.balance < 0) balanceWentNegative = true;
     }
   }
 
@@ -116,8 +127,12 @@ app.post("/api/trip", (req, res) => {
     driverObj.busy = false;
     driverObj.availableSince = Date.now();
   }
-
-  // trips.json ga saqlash
+ // 🔥 AGAR BALANS MANFIY BO‘LSA — AVTOMATIK OFFLINE
+  if (balanceWentNegative && driverObj) {
+    driverObj.busy = true; // linyadan chiqariladi
+    console.log(`🚫 Driver ${driverId} balansi manfiy (${finalBalance}) → AVTO OFFLINE`);
+  }
+ // trips.json ga saqlash
   const trip = {
     ...req.body,
     price: roundedPrice,
@@ -128,7 +143,9 @@ app.post("/api/trip", (req, res) => {
     adminNet,
     commissionRate,
     status: "finished",
-    endedAt: Date.now()
+    endedAt: Date.now(),
+    balanceWentNegative,
+    finalBalance
   };
   try {
     let data = fs.existsSync("trips.json") ? JSON.parse(fs.readFileSync("trips.json", "utf-8")) : [];
@@ -136,18 +153,20 @@ app.post("/api/trip", (req, res) => {
     fs.writeFileSync("trips.json", JSON.stringify(data, null, 2));
   } catch (e) {console.error("trips.json saqlashda xato:", e);}
 
-  // 🔥 Javobda barcha bonus ma'lumotlari
   res.json({
     success: true,
-    message: "Safar yakunlandi. Komissiya bo‘lindi.",
+    message: balanceWentNegative 
+      ? "Safar yakunlandi. BALANSINGIZ MANFIY! Linyadan chiqarildingiz." 
+      : "Safar yakunlandi. Komissiya bo‘lindi.",
     originalPrice: rawPrice,
     roundedPrice,
     commission: commissionAmount,
     driverBonus,
     passengerBonus,
     adminNet,
-    driverNet: roundedPrice - commissionAmount + driverBonus,    // haydovchi qo‘liga tushgan jami
-    passengerBonus
+    driverNet: roundedPrice - commissionAmount + driverBonus,
+    balanceWentNegative,   // ← frontend uchun
+    finalBalance           // ← joriy balans
   });
 });
 
@@ -336,16 +355,21 @@ app.post("/api/login", (req, res) => {
     error: "Telefon yoki parol xato"
   });
 }
-
+  const balance = user.balance || 0;
+  const isNegative = user.role === "driver" && balance < 0;
   res.json({
     success: true,
     user: {
       id: user.id,
       phone: user.phone,
       role: user.role,
-	  balance: user.balance || 0,   // ← YANGI
-	  referrerId: user.referrerId || null  // 🔥 YANGI
-    }
+      balance: balance,
+      referrerId: user.referrerId || null
+    },
+    // 🔥 YANGI
+    warning: isNegative 
+      ? `⚠️ Diqqat! Balansingiz manfiy (${balance} so‘m). Linyaga chiqa olmaysiz. Avval to‘ldiring.` 
+      : null
   });
 });
 
@@ -471,12 +495,41 @@ app.get("/api/order/passenger/:orderId", (req, res) => {
 // ==================== LINYA BOSHQARISH ====================
 app.post("/api/driver/online", (req, res) => {
   const { driverId } = req.body;
+  
+  // 🔥 BALANS TEKSHIRUVI
+  const usersDB = JSON.parse(fs.readFileSync("./users.json"));
+  const user = usersDB.users.find(u => u.id == driverId);
+  
+  if (!user) {
+    return res.json({ success: false, error: "Foydalanuvchi topilmadi" });
+  }
+  
+  const balance = user.balance || 0;
+  if (balance < 0) {
+    return res.json({ 
+      success: false, 
+      error: `Balansingiz manfiy (${balance} so‘m). Linyaga chiqa olmaysiz. Avval xamyoningizni to‘ldiring.` 
+    });
+  }
+  
   const driver = drivers.find(d => d.id == driverId);
   if (driver) {
     driver.busy = false;
-    driver.availableSince = Date.now(); // 🔥 navbat oxiriga tushadi
+    driver.availableSince = Date.now();
     console.log(`✅ Haydovchi ${driverId} linyaga chiqdi → busy=false`);
+  } else {
+    // Agar hali drivers ro‘yxatida bo‘lmasa (birinchi marta)
+    drivers.push({
+      id: driverId,
+      lat: 0,
+      lng: 0,
+      online: true,
+      updatedAt: Date.now(),
+      availableSince: Date.now(),
+      busy: false
+    });
   }
+  
   res.json({ success: true });
 });
 
