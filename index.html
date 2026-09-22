@@ -242,34 +242,58 @@ button.loading {
 
       <button onclick="setRole('driver')">🚕 Haydovchi</button>
       <button onclick="setRole('passenger')">🧍 Yo‘lovchi</button>
-      <button onclick="setRole('admin')">🛠 Admin</button>
+     <!-- <button onclick="setRole('admin')">🛠 Admin</button>izox qilish orqali korinmas qildik -->
  </div>
 
 <!-- AUTH (LOGIN / REGISTER) -->
 <div id="authUI" style="display:none">
   <h3 id="authTitle">Hisobga kirish</h3>
-
-  <input 
-    id="phone" 
-    type="tel"
-    value="+998" 
-    style="width:100%;padding:10px;margin:6px 0;border-radius:8px;"
-  >
- 
- <input id="password" type="password" placeholder="🔒 Parol" style="width:100%;padding:10px;margin:6px 0;border-radius:8px;">
-
- <!-- 🔥 YANGI INPUT: Taklif qilgan ID -->
-  <input 
-    id="referrerId" 
-    type="number" 
-    placeholder="👤 Taklif qilgan ID (ixtiyoriy)" 
-    style="width:100%;padding:10px;margin:6px 0;border-radius:8px;"
-  >
-
+  
+  <input id="phone" type="tel" value="+998" 
+         style="width:100%;padding:10px;margin:6px 0;border-radius:8px;">
+  
+  <!-- Parol + ko‘z belgisi -->
+<div style="position: relative; width: 100%; margin: 6px 0;">
+  <input id="password" type="password" placeholder="🔒 Parol" 
+         style="width:100%; padding:10px 42px 10px 10px; border-radius:8px; box-sizing:border-box;">
+  <span id="togglePassword" onclick="togglePasswordVisibility()"
+        style="position:absolute; right:12px; top:50%; transform:translateY(-50%);
+               cursor:pointer; font-size:1.25rem; user-select:none; color:#0f0;">
+    👁️
+  </span>
+</div>
+  
+  <!-- Faqat yo‘lovchi uchun -->
+  <input id="referrerId" type="number" 
+         placeholder="👤 Taklif qilgan ID (ixtiyoriy)" 
+         style="width:100%;padding:10px;margin:6px 0;border-radius:8px; display:none;">
+  
   <button onclick="login()">🔑 Kirish</button>
-  <button onclick="register()">📝 Ro‘yxatdan o‘tish</button>
+  
+  <!-- Faqat yo‘lovchi uchun -->
+  <button id="registerBtn" onclick="register()" style="display:none">
+    📝 Ro‘yxatdan o‘tish
+  </button>
+
+  <!-- 🔥 YANGI: Faqat haydovchi uchun ko‘rinadi -->
+  <div id="driverCallAdmin" style="display:none; margin-top:18px;">
+    <p style="font-size:1.05rem; color:#0f0; margin-bottom:10px;">
+      Ro‘yxatdan o‘tish uchun adminga qo‘ng‘iroq qiling
+    </p>
+    <button onclick="callAdmin()" style="background:#0f0; color:#000;">
+      📞 Adminga qo‘ng‘iroq
+    </button>
+  </div>
+
   <div id="authLoader" class="loader"></div>
   <button class="backBtn" onclick="backToRoles()">⬅ Orqaga</button>
+  <p id="passengerAuthHint" 
+style="display:none; font-size:0.95rem; color:#0f0; margin-top:18px; line-height:1.45;
+ text-align:left; padding:0 4px;">
+  Agar ro‘yxatdan o‘tmagan bo‘lsangiz, <b>haqiqiy telefon raqam</b> (haydovchilar bog‘lanadi) va 
+  <b>parol</b> (tavsiya: kamida 8 belgi, harf + son) yozing va <b>Ro‘yxatdan o‘tish</b> 
+  tugmasini bosing. Parolni eslab qoling.
+</p>
 </div>
 
  <!-- XAYDOVCHI INTERFEYSI BOSHLANDI -->
@@ -392,9 +416,21 @@ button.loading {
                          <h3>🛠 Admin paneli</h3>
                          <p>Haydovchilar va buyurtmalar</p>
 						 // adminUI div ichiga qo‘shiladigan HTML
-                         <div id="walletDisplayAdmin" class="row" style="font-size:1.3rem;color:#0f0;margin:10px 0;">
+                         <div id="walletDisplayAdmin" class="row" 
+						 style="font-size:1.3rem;color:#0f0;margin:10px 0;">
                           💰 Admin Xamyoni: <span id="adminBalance">0</span> so‘m
                          </div>
+						  <!-- 🔥 YANGI: Haydovchi qo‘shish -->
+  <div style="margin-top:20px; padding:15px; border:2px solid #0f0; border-radius:12px;">
+    <h4>🚕 Yangi haydovchi qo‘shish</h4>
+    <input id="adminDriverPhone" type="tel" value="+998" 
+           style="width:100%;padding:10px;margin:6px 0;border-radius:8px;" placeholder="Telefon">
+    <input id="adminDriverPassword" type="password" 
+           style="width:100%;padding:10px;margin:6px 0;border-radius:8px;" placeholder="🔒 Parol">
+    <input id="adminDriverReferrer" type="number" 
+           style="width:100%;padding:10px;margin:6px 0;border-radius:8px;" placeholder="👤 Taklif qilgan ID (ixtiyoriy)">
+    <button onclick="adminRegisterDriver()">➕ Haydovchini ro‘yxatga olish</button>
+  </div>
 						 <button class="backBtn" onclick="goBack()">⬅ Orqaga</button>
 
                          </div>
@@ -699,29 +735,43 @@ function enableTracking() {
   );
 }//Funksiya tugadi
 
-
 function goOnline() {
- if (!userId) { alert("Avval tizimga kiring!"); return; }
+  if (!userId) { 
+    alert("Avval tizimga kiring!"); 
+    return; 
+  }
   if (!navigator.onLine) {
     alert("Internet yo‘q. Linyaga chiqib bo‘lmaydi.");
     return;
   }
-
-  isOnline = true;
-  // 🔥 LINYAGA CHIQISH — BO‘SHATISH
-fetch(API_URL + "/api/driver/online", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ driverId: userId })
-}).catch(err => console.error("Online status xato:", err));
-
-  document.getElementById("goOnlineBtn").style.display = "none";
-  document.getElementById("goOfflineBtn").style.display = "block";
-
-  enableWakeLock();
-  enableTracking();   // 👈 JOYLASHUV SHU YERDA
-  watchOrdersForDriver(); // 📦 BUYURTMANI KUZATISH
-  console.log("Haydovchi LINYAGA CHIQDI");
+  
+  // 🔥 Backendga so‘rov (balans tekshiriladi)
+  fetch(API_URL + "/api/driver/online", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ driverId: userId })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (!data.success) {
+      // Manfiy balans yoki boshqa xato
+      alert("🚫 " + (data.error || "Linyaga chiqib bo‘lmadi"));
+      return;
+    }
+    
+    // Muvaffaqiyatli
+    isOnline = true;
+    document.getElementById("goOnlineBtn").style.display = "none";
+    document.getElementById("goOfflineBtn").style.display = "block";
+    enableWakeLock();
+    enableTracking();
+    watchOrdersForDriver();
+    console.log("Haydovchi LINYAGA CHIQDI");
+  })
+  .catch(err => {
+    console.error("Online status xato:", err);
+    alert("Server bilan bog‘lanib bo‘lmadi");
+  });
 }
 
 function goOffline() {
@@ -812,15 +862,38 @@ let role = null;
 
 function setRole(selectedRole) {
   role = selectedRole;
-
   document.getElementById("roleSelect").style.display = "none";
   document.getElementById("authUI").style.display = "block";
-
+  
   document.getElementById("authTitle").innerText =
     role === "driver" ? "🚕 Haydovchi kirishi" :
     role === "passenger" ? "🧍 Yo‘lovchi kirishi" :
     "🛠 Admin kirishi";
 
+  // 🔥 YANGI: faqat yo‘lovchiga register + referrer ko‘rsatamiz
+  const referrerInput = document.getElementById("referrerId");
+  const registerBtn = document.getElementById("registerBtn");
+  const driverCallAdmin = document.getElementById("driverCallAdmin");
+  
+  if (role === "passenger") {
+    referrerInput.style.display = "block";
+    registerBtn.style.display = "block";
+	driverCallAdmin.style.display = "none";
+	document.getElementById("passengerAuthHint").style.display = "block";   // ← YANGI
+  }
+  else if (role === "driver") {
+    referrerInput.style.display = "none";
+    registerBtn.style.display   = "none";
+    driverCallAdmin.style.display = "block";   // 🔥 faqat haydovchiga
+	document.getElementById("passengerAuthHint").style.display = "none";    // ← YANGI
+  } 
+  else {
+    // admin 
+    referrerInput.style.display = "none";
+    registerBtn.style.display = "none";
+    driverCallAdmin.style.display = "none";
+	 document.getElementById("passengerAuthHint").style.display = "none";    // ← YANGI
+  }
   console.log("Rol tanlandi:", role);
 }
 
@@ -870,7 +943,21 @@ fetch(API_URL + "/api/trip", {
     document.getElementById("price").innerText = data.roundedPrice;
     document.getElementById("mPrice").innerText = data.roundedPrice;
   }
+   // 🔥 MANFIY BALANS TEKSHIRUVI
+    if (data.balanceWentNegative) {
+      alert(
+        `🚫 DIQQAT!\n\n` +
+        `Safar yakunlandi, lekin balansingiz manfiy bo‘lib qoldi:\n` +
+        `${data.finalBalance} so‘m\n\n` +
+        `Siz avtomatik ravishda linyadan chiqarildingiz.\n` +
+        `Linyaga chiqish uchun avval xamyoningizni to‘ldiring.`
+      );
+      
+      // Avtomatik offline qilish
+      goOffline();
+    }
    reset();
+   loadWallet();   // ←balans yangilash
   })
   .catch(err => {
     console.error("Xato backendga yuborishda:", err);
@@ -907,7 +994,6 @@ fetch(API_URL + "/api/trip", {
   document.getElementById("orderBox").style.display = "none";
   document.getElementById("tripPanel").style.display = "none";
   document.getElementById("acceptBtn").style.display = "block";
-  loadWallet();   // ← YANGI: haydovchi pul oldi
 }
 
 
@@ -978,13 +1064,14 @@ async function login() {
     }
 if (data.success) {
   userId = data.user.id;   // 🔥 MUHIM
-  localStorage.setItem("userId", userId);   // ← qo‘shing
-  localStorage.setItem("role", role);   // ← YANGI
   role = data.user.role;
+   // 🔥 MANFIY BALANS OGOHLANTIRISHI
+      if (data.warning) {
+        alert(data.warning);
+      }
   openRoleUI();
 }
    
-
   } catch (e) {
     alert("Server bilan bog‘lanib bo‘lmadi");
   }
@@ -1024,8 +1111,6 @@ async function register() {
     }
 if (data.success) {
   userId = data.user.id;   // 🔥 MUHIM
-  localStorage.setItem("userId", userId);   // ← qo‘shing
-  localStorage.setItem("role", role);   // ← YANGI
   role = data.user.role;
    // 🔥 YANGI: Referrer bo'lsa xabar berish
       if (data.referrer) {
@@ -1530,35 +1615,26 @@ let passengerRoute = null;
   }, { once: true });
 }
 
-// ====================== AUTO RESTORE (sahifa yangilansa ham davom etadi) ======================
+// ====================== FAQAT SAHIFA YUKLANISHI (AUTO LOGIN YO'Q) ======================
 window.addEventListener("load", () => {
-  const savedUserId = localStorage.getItem("userId");
-  const savedRole   = localStorage.getItem("role");
-
-  if (savedUserId && savedRole) {
-    userId = parseInt(savedUserId);
-    role   = savedRole;
-
-    console.log("🔄 Auto restore:", role, userId);
-
-    // Role select va auth ni yashiramiz
-    document.getElementById("roleSelect").style.display = "none";
-    document.getElementById("authUI").style.display = "none";
-
-    if (role === "driver") {
-      document.getElementById("driverUI").style.display = "block";
-      watchOrdersForDriver();        // buyurtmalarni darhol kuzatish
-      // agar oldin online bo‘lgan bo‘lsa — yana online qilamiz
-      if (isOnline) goOnline();
-    } 
-    else if (role === "passenger") {
-      document.getElementById("passengerUI").style.display = "block";
-      locatePassenger();
-    } 
-    else if (role === "admin") {
-      document.getElementById("adminUI").style.display = "block";
-    }
-  }
+  // localStorage ni tozalash (eski sessiyalarni o'chirish)
+  localStorage.removeItem("userId");
+  localStorage.removeItem("role");
+  
+  // Barcha UI'larni yashirish
+  document.getElementById("driverUI").style.display = "none";
+  document.getElementById("passengerUI").style.display = "none";
+  document.getElementById("adminUI").style.display = "none";
+  document.getElementById("authUI").style.display = "none";
+  
+  // Faqat roleSelect ni ko'rsatish
+  document.getElementById("roleSelect").style.display = "block";
+  
+  // userId va role ni tozalash
+  userId = null;
+  role = null;
+  
+  console.log("🔄 Sahifa yangilandi - foydalanuvchi qaytadan kirishi kerak");
 });
 
 // ==================== YANGI FUNKSIYA ====================
@@ -1627,6 +1703,18 @@ window.addEventListener("load", () => {
     }
   });
 }
+function togglePasswordVisibility() {
+  const input = document.getElementById("password");
+  const icon  = document.getElementById("togglePassword");
+
+  if (input.type === "password") {
+    input.type = "text";
+    icon.innerText = "🙈";          // yopiq ko‘z
+  } else {
+    input.type = "password";
+    icon.innerText = "👁️";          // ochiq ko‘z
+  }
+}
 
 // Sahifa yuklanganda va rol tanlanganda ishga tushirish
 window.addEventListener('load', setupPhoneInput);
@@ -1659,7 +1747,53 @@ window.setRole = function(selectedRole) {
     }
   } catch (e) { console.log("Xamyon yuklanmadi"); }
 }
+async function adminRegisterDriver() {
+  const phone = document.getElementById("adminDriverPhone").value.trim();
+  const password = document.getElementById("adminDriverPassword").value;
+  const referrerIdInput = document.getElementById("adminDriverReferrer").value.trim();
+  const referrerId = referrerIdInput ? parseInt(referrerIdInput) : null;
 
+  if (!phone || !password) {
+    alert("Telefon va parol majburiy");
+    return;
+  }
+
+  try {
+    const res = await fetch(API_URL + "/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        phone, 
+        password, 
+        role: "driver",          // ← majburiy driver
+        referrerId 
+      })
+    });
+    const data = await res.json();
+    
+    if (!data.success) {
+      alert(data.error || "Xatolik");
+      return;
+    }
+    
+    alert(`✅ Haydovchi muvaffaqiyatli qo‘shildi!\nID: ${data.user.id}\nTelefon: ${phone}`);
+    
+    // Formani tozalash
+    document.getElementById("adminDriverPhone").value = "+998";
+    document.getElementById("adminDriverPassword").value = "";
+    document.getElementById("adminDriverReferrer").value = "";
+    
+  } catch (e) {
+    alert("Server xatosi");
+  }
+}
+
+function callAdmin() {
+  // ⚠️ O‘zingizning admin telefon raqamingizni yozing
+  const adminPhone = "+998975167605";   // ← bu yerni o‘zgartiring
+  
+  window.location.href = `tel:${adminPhone}`;
+}
 //   npx http-server .                         bu front server uchun powershel kodi faqat lakal
 //   npx http-server . -a 0.0.0.0 -p 8080      bu lakal ham tashqi qurulmalarga pwsh kodi 
 </script>
