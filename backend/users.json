@@ -1,49 +1,54 @@
 {
   "users": [
     {
-      "id": 905581910,
-      "phone": "+998905581910",
-      "password": "1910",
-      "role": "passenger",
-      "balance": 0,
-      "referrerId": null,
-      "createdAt": "2026-05-05T19:28:24.953Z"
-    },
-    {
-      "id": 904313797,
-      "phone": "+998904313797",
-      "password": "3797",
-      "role": "passenger",
-      "balance": 0,
-      "referrerId": 905581910,
-      "createdAt": "2026-05-05T19:38:20.915Z"
-    },
-    {
       "id": 975167605,
       "phone": "+998975167605",
       "password": "22olimovich011988",
       "role": "admin",
       "balance": 10000,
       "referrerId": null,
+	  "name": "admin",
       "createdAt": "2026-09-13T17:43:00.755Z"
     },
     {
-      "id": 919190999,
-      "phone": "+998919190999",
-      "password": "0999",
-      "role": "driver",
+      "id": 111111111,
+      "phone": "+998111111111",
+      "password": "1111",
+      "role": "passenger",
       "balance": 0,
-      "referrerId": 335167605,
-      "createdAt": "2026-09-13T18:41:03.295Z"
+      "referrerId": null,
+      "name": "aaaa",
+      "createdAt": "2026-10-14T20:17:52.413Z"
     },
     {
-      "id": 335167605,
-      "phone": "+998335167605",
-      "password": "7605",
+      "id": 222222222,
+      "phone": "+998222222222",
+      "password": "2222",
+      "role": "passenger",
+      "balance": 0,
+      "referrerId": 111111111,
+      "name": "bbbb",
+      "createdAt": "2026-10-14T20:18:57.596Z"
+    },
+    {
+      "id": 333333333,
+      "phone": "+998333333333",
+      "password": "3333",
       "role": "driver",
       "balance": 0,
       "referrerId": null,
-      "createdAt": "2026-09-14T18:19:30.144Z"
+      "name": "vvvv",
+      "createdAt": "2026-10-14T20:20:52.450Z"
+    },
+    {
+      "id": 444444444,
+      "phone": "+998444444444",
+      "password": "4444",
+      "role": "driver",
+      "balance": 0,
+      "referrerId": 333333333,
+      "name": "gggg",
+      "createdAt": "2026-10-14T20:22:34.446Z"
     }
   ]
 }
