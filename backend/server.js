@@ -30,11 +30,11 @@ app.post("/api/trip", (req, res) => {
   const commissionAmount = Math.floor(roundedPrice * commissionRate);
   
    // 🔥 AJRATILADIGAN BONUSLAR:
-  // 12% ning 2/12 qismi → haydovchiga
-  // 12% ning 2/12 qismi → yo‘lovchiga
-  // 12% ning 8/12 qismi → adminga qoladi
-  const driverBonus  = Math.floor(commissionAmount * (2 / 12));
-  const passengerBonus = Math.floor(commissionAmount * (2 / 12));
+  // 12% ning 3/12 qismi → haydovchiga
+  // 12% ning 3/12 qismi → yo‘lovchiga
+  // 12% ning 6/12 qismi → adminga qoladi
+  const driverBonus  = Math.floor(commissionAmount * (3 / 12));
+  const passengerBonus = Math.floor(commissionAmount * (3 / 12));
   const adminNet      = commissionAmount - driverBonus - passengerBonus;
   
   // users.json ni o'qish
@@ -75,11 +75,11 @@ app.post("/api/trip", (req, res) => {
   }
   
    // ========== YANGI: BONUSDAN REFERRERGA ULUSH ==========
-  // Haydovchi bonusidan 1/5 → uning referreriga
+  // Haydovchi bonusidan 1/3 → uning referreriga
   if (driver && driver.referrerId) {
     const driverReferrer = usersDB.users.find(u => u.id === driver.referrerId);
     if (driverReferrer) {
-      const share = Math.floor(driverBonus * (1 / 5));
+      const share = Math.floor(driverBonus * (1 / 3));
       driver.balance -= share;               // haydovchidan ayiramiz
       driverReferrer.balance = (driverReferrer.balance || 0) + share;
       console.log(`👤 Driver referrer ${driverReferrer.id} ga ${share} so'm o'tkazildi`);
@@ -88,13 +88,13 @@ app.post("/api/trip", (req, res) => {
     }
   }
 
-  // Yo'lovchi bonusidan 1/5 → uning referreriga
+  // Yo'lovchi bonusidan 1/3 → uning referreriga
   if (passengerId) {
     const passenger = usersDB.users.find(u => u.id == passengerId);
     if (passenger && passenger.referrerId) {
       const passengerReferrer = usersDB.users.find(u => u.id === passenger.referrerId);
       if (passengerReferrer) {
-        const share = Math.floor(passengerBonus * (1 / 5));
+        const share = Math.floor(passengerBonus * (1 / 3));
         passenger.balance -= share;           // yo'lovchidan ayiramiz
         passengerReferrer.balance = (passengerReferrer.balance || 0) + share;
         console.log(`👤 Passenger referrer ${passengerReferrer.id} ga ${share} so'm o'tkazildi`);
@@ -268,7 +268,7 @@ app.get("/api/trip/current", (req, res) => {
 
 app.post("/api/register", (req, res) => {
 	 console.log("📥 REGISTER:", req.body);
- const { phone, password, role, referrerId } = req.body; // 🔥 referrerId qo'shildi
+ const { phone, password, role, referrerId, name } = req.body;  // ← name qo‘shildi
 
   if (!phone || !password || !role) {
   return res.json({
@@ -309,6 +309,7 @@ app.post("/api/register", (req, res) => {
     role,
 	balance: 0,          // ← YANGI: xamyon
 	referrerId: referrerId || null,  // 🔥 YANGI: Kim taklif qilgani
+	name: name || null,                    // ← YANGI
     createdAt: new Date().toISOString()
   };
 
@@ -323,7 +324,8 @@ app.post("/api/register", (req, res) => {
       phone, 
       role, 
       balance: 0,
-      referrerId: user.referrerId 
+      referrerId: user.referrerId,
+	  name: user.name                       // ← qo‘shish mumkin (ixtiyoriy)
     }
   };
 
@@ -364,7 +366,8 @@ app.post("/api/login", (req, res) => {
       phone: user.phone,
       role: user.role,
       balance: balance,
-      referrerId: user.referrerId || null
+      referrerId: user.referrerId || null,
+	  name: user.name || null                 // ← qo‘shish mumkin
     },
     // 🔥 YANGI
     warning: isNegative 
@@ -640,6 +643,94 @@ app.get("/api/wallet/:userId", (req, res) => {
   const user = usersDB.users.find(u => u.id == userId);
   if (!user) return res.json({ success: false, error: "Foydalanuvchi topilmadi" });
   res.json({ success: true, balance: user.balance || 0 });
+});
+
+// ==================== FOYDALANUVCHINI ID BO‘YICHA TOPISH (o‘tkazma uchun) ====================
+app.get("/api/user/:id", (req, res) => {
+  const { id } = req.params;
+  try {
+    const usersDB = JSON.parse(fs.readFileSync("./users.json"));
+    const user = usersDB.users.find(u => u.id == id);
+    if (!user) {
+      return res.json({ success: false, error: "topilmadi" });
+    }
+    // Faqat xavfsiz ma'lumotlar (parol yo‘q)
+    res.json({
+      success: true,
+      name: user.name || null,
+      phone: user.phone || null,
+      role: user.role || null
+    });
+  } catch (e) {
+    res.json({ success: false, error: "Server xatosi" });
+  }
+});
+
+// ==================== PUL O‘TKAZMA ====================
+app.post("/api/wallet/transfer", (req, res) => {
+  const { fromId, toId, amount } = req.body;
+
+  // 1. Validatsiya
+  if (!fromId || !toId || !amount) {
+    return res.json({ success: false, error: "fromId, toId va amount majburiy" });
+  }
+
+  const numAmount = parseInt(amount);
+  if (isNaN(numAmount) || numAmount <= 0) {
+    return res.json({ success: false, error: "Summa to‘g‘ri emas (musbat butun son bo‘lishi kerak)" });
+  }
+
+  if (Number(fromId) === Number(toId)) {
+    return res.json({ success: false, error: "O‘zingizga o‘tkaza olmaysiz" });
+  }
+
+  // 2. users.json ni o‘qish
+  let usersDB;
+  try {
+    usersDB = JSON.parse(fs.readFileSync("./users.json"));
+  } catch (e) {
+    return res.json({ success: false, error: "Foydalanuvchilar bazasi o‘qilmadi" });
+  }
+
+  const fromUser = usersDB.users.find(u => u.id == fromId);
+  const toUser   = usersDB.users.find(u => u.id == toId);
+
+  if (!fromUser) {
+    return res.json({ success: false, error: "Yuboruvchi topilmadi" });
+  }
+  if (!toUser) {
+    return res.json({ success: false, error: "Qabul qiluvchi topilmadi" });
+  }
+
+  // 3. Balans tekshiruvi
+  const fromBalance = fromUser.balance || 0;
+  if (fromBalance < numAmount) {
+    return res.json({
+      success: false,
+      error: `Yetarli mablag‘ yo‘q. Sizning balansingiz: ${fromBalance} so‘m`
+    });
+  }
+
+  // 4. O‘tkazish
+  fromUser.balance = fromBalance - numAmount;
+  toUser.balance   = (toUser.balance || 0) + numAmount;
+
+  // 5. Saqlash
+  try {
+    fs.writeFileSync("./users.json", JSON.stringify(usersDB, null, 2));
+  } catch (e) {
+    return res.json({ success: false, error: "Saqlashda xatolik" });
+  }
+
+  console.log(`💸 O‘tkazma: ${fromId} → ${toId} | ${numAmount} so‘m`);
+
+  res.json({
+    success: true,
+    message: "O‘tkazma muvaffaqiyatli amalga oshirildi",
+    fromBalance: fromUser.balance,
+    toBalance: toUser.balance,
+    amount: numAmount
+  });
 });
 
 app.listen(PORT, '0.0.0.0', () => {
