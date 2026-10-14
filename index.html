@@ -214,8 +214,18 @@ button.loading {
   pointer-events: none;
 }
 
-
-
+/* ==================== O‘TKAZMA MODAL ==================== */
+#transferModal input {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 10px;
+  border: 1px solid #0f0;
+  background: #111;
+  color: #0f0;
+  font-size: 1.1rem;
+  box-sizing: border-box;
+}
 </style>
 
 <script src="https://api-maps.yandex.ru/2.1/?apikey=d4f5509b-184b-4353-a9aa-45655cba59d9&lang=uz_UZ"></script>
@@ -256,7 +266,7 @@ button.loading {
 <div style="position: relative; width: 100%; margin: 6px 0;">
   <input id="password" type="password" placeholder="🔒 Parol" 
          style="width:100%; padding:10px 42px 10px 10px; border-radius:8px; box-sizing:border-box;">
-  <span id="togglePassword" onclick="togglePasswordVisibility()"
+  <span id="togglePassword" onclick="togglePasswordVisibility('password', 'togglePassword')"
         style="position:absolute; right:12px; top:50%; transform:translateY(-50%);
                cursor:pointer; font-size:1.25rem; user-select:none; color:#0f0;">
     👁️
@@ -267,6 +277,9 @@ button.loading {
   <input id="referrerId" type="number" 
          placeholder="👤 Taklif qilgan ID (ixtiyoriy)" 
          style="width:100%;padding:10px;margin:6px 0;border-radius:8px; display:none;">
+  <input id="name" type="text" 
+         placeholder="👤 Ism (ixtiyoriy)" 
+         style="width:100%;padding:10px;margin:6px 0;border-radius:8px;">	 
   
   <button onclick="login()">🔑 Kirish</button>
   
@@ -302,9 +315,13 @@ style="display:none; font-size:0.95rem; color:#0f0; margin-top:18px; line-height
                         
                 <div id="netStatus" class="status offline">🔴 Offline</div>
 
-                <div id="walletDisplayDriver" class="row" style="font-size:1.3rem;color:#0f0;margin:10px 0;">
-               💰 Xamyon: <span id="driverBalance">0</span> so‘m
-               </div>
+                <button type="button" id="walletDisplayDriver" class="wallet-btn" onclick="loadWallet()">
+                  💰 Xamyon: <span id="driverBalance">0</span> so‘m
+                  <span class="refresh-icon" title="Yangilash">🔄</span>
+                </button>
+				<button type="button" class="transfer-btn" onclick="openTransferModal()">
+                💸 O‘tkazma
+                </button>
 
                 <div id="mapLoading">🗺 Xarita yuklanmoqda...</div>
 
@@ -387,9 +404,13 @@ style="display:none; font-size:0.95rem; color:#0f0; margin-top:18px; line-height
 
 <div id="passengerUI" style="display:none">
   <h3>🧍 Yo‘lovchi paneli</h3>
-             <div id="walletDisplayPassenger" class="row" style="font-size:1.3rem;color:#0f0;margin:10px 0;">
-             💰 Xamyon: <span id="passengerBalance">0</span> so‘m
-             </div>
+             <button type="button" id="walletDisplayPassenger" class="wallet-btn" onclick="loadWallet()">
+               💰 Xamyon: <span id="passengerBalance">0</span> so‘m
+               <span class="refresh-icon" title="Yangilash">🔄</span>
+             </button> 
+			 <button type="button" class="transfer-btn" onclick="openTransferModal()">
+             💸 O‘tkazma
+             </button>
   <div class="row">📍 Sizning joylashuvingiz</div>
   <div id="pMap" style="height:300px;border-radius:12px;"></div>
 
@@ -416,19 +437,33 @@ style="display:none; font-size:0.95rem; color:#0f0; margin-top:18px; line-height
                          <h3>🛠 Admin paneli</h3>
                          <p>Haydovchilar va buyurtmalar</p>
 						 // adminUI div ichiga qo‘shiladigan HTML
-                         <div id="walletDisplayAdmin" class="row" 
-						 style="font-size:1.3rem;color:#0f0;margin:10px 0;">
+                       <button type="button" id="walletDisplayAdmin" class="wallet-btn" onclick="loadWallet()">
                           💰 Admin Xamyoni: <span id="adminBalance">0</span> so‘m
-                         </div>
+                          <span class="refresh-icon" title="Yangilash">🔄</span>
+                       </button>
+					   <button type="button" class="transfer-btn" onclick="openTransferModal()">
+                        💸 O‘tkazma
+                       </button>
 						  <!-- 🔥 YANGI: Haydovchi qo‘shish -->
   <div style="margin-top:20px; padding:15px; border:2px solid #0f0; border-radius:12px;">
     <h4>🚕 Yangi haydovchi qo‘shish</h4>
     <input id="adminDriverPhone" type="tel" value="+998" 
            style="width:100%;padding:10px;margin:6px 0;border-radius:8px;" placeholder="Telefon">
-    <input id="adminDriverPassword" type="password" 
-           style="width:100%;padding:10px;margin:6px 0;border-radius:8px;" placeholder="🔒 Parol">
+    	   <!-- Parol + ko‘z belgisi (admin) -->
+<div style="position: relative; width: 100%; margin: 6px 0;">
+  <input id="adminDriverPassword" type="password" placeholder="🔒 Parol" 
+         style="width:100%; padding:10px 42px 10px 10px; border-radius:8px; box-sizing:border-box;">
+  <span id="toggleAdminPassword" onclick="togglePasswordVisibility('adminDriverPassword', 'toggleAdminPassword')"
+        style="position:absolute; right:12px; top:50%; transform:translateY(-50%);
+               cursor:pointer; font-size:1.25rem; user-select:none; color:#0f0;">
+    👁️
+  </span>
+</div>
     <input id="adminDriverReferrer" type="number" 
            style="width:100%;padding:10px;margin:6px 0;border-radius:8px;" placeholder="👤 Taklif qilgan ID (ixtiyoriy)">
+	<input id="adminDriverName" type="text" 
+       placeholder="👤 Ism (ixtiyoriy)" 
+       style="width:100%;padding:10px;margin:6px 0;border-radius:8px;">	   
     <button onclick="adminRegisterDriver()">➕ Haydovchini ro‘yxatga olish</button>
   </div>
 						 <button class="backBtn" onclick="goBack()">⬅ Orqaga</button>
@@ -446,7 +481,25 @@ style="display:none; font-size:0.95rem; color:#0f0; margin-top:18px; line-height
 
     </div>
 	<div id="miniHandle" onclick="restoreBox()">⬆</div>
+<!-- ==================== O‘TKAZMA MODAL ==================== -->
+<div id="transferModal" class="modal">
+  <div class="modal-box">
+    <h3>💸 Pul o‘tkazish</h3>
 
+   <input id="transferToId" type="tel" inputmode="numeric" 
+       placeholder="👤 Qabul qiluvchi ID (9 raqam)">
+	   <div id="transferUserInfo"></div>
+	   <div id="transferLoader" class="loader" style="margin:6px auto;"></div>
+    <input id="transferAmount" type="number" placeholder="💰 Summa (so‘m)" min="1">
+
+    <button onclick="doTransfer()" style="background:#0f0;color:#000;">
+      ✅ O‘tkazish
+    </button>
+    <button onclick="closeTransferModal()" style="background:#333;color:#0f0;margin-top:8px;">
+      ❌ Bekor qilish
+    </button>
+  </div>
+</div>
 
  </div>
 
@@ -498,12 +551,12 @@ function toggleTrip() {
     startTrip();
 
     const btn = document.getElementById("tripBtn");
-    btn.innerText = "⏹ Stop";
+    btn.innerText = "⏸ Pauza";
     btn.style.background = "#f00";
     btn.style.color = "#fff";
 
   } else {
-    // STOP
+    // Pauza
     tripActive = false;
     stopTrip();
 
@@ -548,16 +601,22 @@ function disableWakeLock() {
  function startTrip() {
   if (interval) return;
 
-  // 🔥 SAFAR BOSHLANDI — BACKENDGA
+  // Joriy holatni hisoblab yuboramiz (birinchi marta ham, resume ham)
+  const minutes = Math.floor(seconds / 60);
+  const sec = seconds % 60;
+  const currentTime = `${String(minutes).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+  const currentDistance = totalDistance.toFixed(2);
+  const currentPrice = document.getElementById("price").innerText;
+
   fetch(API_URL + "/api/trip/start", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-	  driverId: userId,           // ← MUHIM qo‘shildi
+      driverId: userId,
       status: "started",
-      time: "00:00",
-      distance: 0,
-      price: startPrice
+      time: currentTime,
+      distance: currentDistance,
+      price: currentPrice
     })
   });
 
@@ -1086,6 +1145,7 @@ async function register() {
   }
   const phone = document.getElementById("phone").value.trim();
   const password = document.getElementById("password").value;
+  const name = document.getElementById("name").value.trim() || null;   // ← YANGI
 
    // 🔥 YANGI: Referrer ID ni olish
   const referrerIdInput = document.getElementById("referrerId");
@@ -1099,7 +1159,7 @@ async function register() {
     const res = await fetch(API_URL + "/api/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone, password, role, referrerId  })
+      body: JSON.stringify({ phone, password, role, referrerId, name })  // ← name qo‘shildi
     });
 
     const data = await res.json();
@@ -1336,14 +1396,7 @@ if (lastPosition && order) {
       acceptBtn.classList.remove("countdown");
       acceptBtn.style.animation = "";
       tripPanel.style.display = "block";
-	   // 🔥 YANGI: Safar paneli ochilganda narxlarni tekshirish
-  if (!tripActive) {
-    document.getElementById("price").innerText = "3000";
-    document.getElementById("time").innerText = "00:00";
-    document.getElementById("distance").innerText = "0.00";
-  }
     }
-
     // Marshrut chizish (eski kod saqlangan)
     if (lastPosition && !routeDrawn) {
       drawRoute(lastPosition.lat, lastPosition.lng, order.lat, order.lng);
@@ -1638,7 +1691,7 @@ window.addEventListener("load", () => {
 });
 
 // ==================== YANGI FUNKSIYA ====================
- function callPassenger() {
+  function callPassenger() {
   if (!currentOrder || !currentOrder.passengerPhone) {
     alert("❌ Yo‘lovchi raqami topilmadi.\n\nIltimos, biroz kutib turing yoki sahifani yangilang.");
     return;
@@ -1650,69 +1703,159 @@ window.addEventListener("load", () => {
   console.log("📞 Qo‘ng‘iroq ochilmoqda:", telLink);
   window.location.href = telLink;
 }
+// ==================== UMUMIY RAQAMLI INPUT SOZLASH ====================
+// mode: "phone" → +998 + 9 raqam
+// mode: "id"    → faqat 9 raqam (o‘tkazma ID)
+ function setupNumericInputById(inputId, mode = "phone") {
+  const input = document.getElementById(inputId);
+  if (!input || input.dataset.numericSetup === "1") return;
+  input.dataset.numericSetup = "1";
 
-// ==================== +998 MAJBURIY + 9 TA RAQAM ====================
- function setupPhoneInput() {
-  const input = document.getElementById('phone');
-  if (!input) return;
-
-  // Dastlab +998 qo‘yish
-  input.value = '+998';
-
-  // Har bir kiritishda tekshirish
-  input.addEventListener('input', function () {
-    let val = this.value;
-
-    // +998 ni majburiy saqlash
-    if (!val.startsWith('+998')) {
-      val = '+998' + val.replace(/[^0-9]/g, '');
+  if (mode === "phone") {
+    // Dastlab +998 qo‘yish
+    if (!input.value || !input.value.startsWith('+998')) {
+      input.value = '+998';
     }
 
-    // +998 dan keyin faqat raqamlar
-    const digits = val.substring(4).replace(/[^0-9]/g, '');
-    
-    // Maksimal 9 ta raqam
-    this.value = '+998' + digits.substring(0, 9);
-  });
+    input.addEventListener('input', function () {
+      let val = this.value;
+      if (!val.startsWith('+998')) {
+        val = '+998' + val.replace(/[^0-9]/g, '');
+      }
+      const digits = val.substring(4).replace(/[^0-9]/g, '');
+      this.value = '+998' + digits.substring(0, 9);
+    });
 
-  // Backspace bilan +998 ni o‘chirishni taqiqlash
-  input.addEventListener('keydown', function (e) {
-    if (e.key === 'Backspace' && this.selectionStart <= 4) {
-      e.preventDefault();
+    input.addEventListener('keydown', function (e) {
+      if ((e.key === 'Backspace' || e.key === 'Delete') && this.selectionStart <= 4) {
+        e.preventDefault();
+      }
+    });
+
+    input.addEventListener('focus', function () {
+      if (this.value === '+998' || this.selectionStart < 4) {
+        this.setSelectionRange(4, Math.max(4, this.selectionStart));
+      }
+    });
+
+    input.addEventListener('blur', function () {
+      const digits = this.value.substring(4).replace(/[^0-9]/g, '');
+      if (digits.length < 9) {
+        alert("❌ Telefon raqami to‘liq emas!\n\n+998 dan keyin aniq 9 ta raqam bo‘lishi shart.");
+        setTimeout(() => {
+          this.focus();
+          this.setSelectionRange(4, this.value.length);
+        }, 10);
+      }
+    });
+  } 
+ else if (mode === "id") {
+  let lastLookedId = null;
+
+  input.addEventListener("input", function () {
+    const digits = this.value.replace(/[^0-9]/g, "").substring(0, 9);
+    this.value = digits;
+
+    const infoEl = document.getElementById("transferUserInfo");
+    if (infoEl) infoEl.innerText = "";
+
+    const loaderEl = document.getElementById("transferLoader");
+    if (loaderEl) loaderEl.style.display = "none";
+
+    if (digits.length === 9) {
+      if (digits === lastLookedId) return;
+      lastLookedId = digits;
+      lookupTransferUser(digits, this);
+    } else {
+      lastLookedId = null;
     }
   });
 
-  // Foydalanuvchi fokus qilganda kursorni +998 dan keyin qo‘yish
-  input.addEventListener('focus', function () {
-    if (this.value === '+998') {
-      this.setSelectionRange(4, 4);
-    }
+  input.addEventListener("focus", function () {
+    const digits = this.value.replace(/[^0-9]/g, "").substring(0, 9);
+    this.value = digits;
+    lastLookedId = null;
+
+    const infoEl = document.getElementById("transferUserInfo");
+    if (infoEl) infoEl.innerText = "";
+
+    const loaderEl = document.getElementById("transferLoader");
+    if (loaderEl) loaderEl.style.display = "none";
+
+    setTimeout(() => this.setSelectionRange(digits.length, digits.length), 0);
   });
-  // 🔥 ASOSIY TUZATISH: blur + alert + focus
-  input.addEventListener('blur', function () {
-    const digits = this.value.substring(4).replace(/[^0-9]/g, '');
 
-    if (digits.length < 9) {
-      alert("❌ Telefon raqami to‘liq emas!\n\n+998 dan keyin aniq 9 ta raqam bo‘lishi shart.\n\niltimos, tuzatish uchun.\n\nOK ni ikki marta bosing.");
-
-      // Brauzer fokusni qaytarish uchun setTimeout ishlatamiz
+  input.addEventListener("blur", function () {
+    const digits = this.value.replace(/[^0-9]/g, "").substring(0, 9);
+    if (digits.length > 0 && digits.length !== 9) {
+      alert("❌ Qabul qiluvchi ID aniq 9 ta raqamdan iborat bo‘lishi kerak!");
       setTimeout(() => {
         this.focus();
-        this.setSelectionRange(4, this.value.length); // raqam qismiga kursorni qo‘yamiz
+        this.setSelectionRange(digits.length, digits.length);
       }, 10);
+    } else if (digits.length === 9 && digits !== lastLookedId) {
+      lastLookedId = digits;
+      lookupTransferUser(digits, this);
     }
   });
 }
-function togglePasswordVisibility() {
-  const input = document.getElementById("password");
-  const icon  = document.getElementById("togglePassword");
+}
+ async function lookupTransferUser(id, inputEl) {
+  const infoEl = document.getElementById("transferUserInfo");
+  const loaderEl = document.getElementById("transferLoader");
+  if (!infoEl || !loaderEl) return;
+
+  const currentDigits = (inputEl?.value || "").replace(/[^0-9]/g, "").substring(0, 9);
+  if (currentDigits !== id) return;
+
+  // Qidirish boshlandi → spinner chiqadi
+  infoEl.innerText = "";
+  loaderEl.style.display = "block";
+
+  try {
+    const res = await fetch(API_URL + "/api/user/" + id);
+    const data = await res.json();
+
+    const stillSame = (inputEl?.value || "").replace(/[^0-9]/g, "").substring(0, 9) === id;
+    if (!stillSame) return;
+
+    // Javob keldi → spinner yo‘qoladi
+    loaderEl.style.display = "none";
+
+    if (data.success) {
+      const displayName = data.name || data.phone || "Ismsiz";
+      infoEl.innerText = "✓ " + displayName;
+      infoEl.style.color = "#0f0";
+    } else {
+      infoEl.innerText = "✗ topilmadi, tekshirib qayta yozing";
+      infoEl.style.color = "#f55";
+    }
+  } catch (e) {
+    console.log("Foydalanuvchi izlash xato:", e);
+    const stillSame = (inputEl?.value || "").replace(/[^0-9]/g, "").substring(0, 9) === id;
+    if (stillSame) {
+      loaderEl.style.display = "none";
+      infoEl.innerText = "✗ topilmadi, tekshirib qayta yozing";
+      infoEl.style.color = "#f55";
+    }
+  }
+}
+function setupPhoneInput() {
+  setupNumericInputById('phone', 'phone');
+  setupNumericInputById('adminDriverPhone', 'phone');
+}
+
+function togglePasswordVisibility(inputId, iconId) {
+  const input = document.getElementById(inputId || "password");
+  const icon  = document.getElementById(iconId || "togglePassword");
+  if (!input || !icon) return;
 
   if (input.type === "password") {
     input.type = "text";
-    icon.innerText = "🙈";          // yopiq ko‘z
+    icon.innerText = "🙈";
   } else {
     input.type = "password";
-    icon.innerText = "👁️";          // ochiq ko‘z
+    icon.innerText = "👁️";
   }
 }
 
@@ -1729,6 +1872,15 @@ window.setRole = function(selectedRole) {
 // ==================== XAMYON FUNKSIYALARI ====================
  async function loadWallet() {
   if (!userId) return;
+  
+   // Tugmalarni vaqtincha "yuklanmoqda" holatiga o‘tkazish
+  const btns = [
+    document.getElementById("walletDisplayDriver"),
+    document.getElementById("walletDisplayPassenger"),
+    document.getElementById("walletDisplayAdmin")
+  ].filter(Boolean);
+  btns.forEach(b => b.classList.add("loading"));
+  
   try {
     const res = await fetch(API_URL + "/api/wallet/" + userId);
     const data = await res.json();
@@ -1746,10 +1898,14 @@ window.setRole = function(selectedRole) {
       } 
     }
   } catch (e) { console.log("Xamyon yuklanmadi"); }
+  finally {
+    btns.forEach(b => b.classList.remove("loading"));
+  }
 }
 async function adminRegisterDriver() {
   const phone = document.getElementById("adminDriverPhone").value.trim();
   const password = document.getElementById("adminDriverPassword").value;
+  const name = document.getElementById("adminDriverName").value.trim() || null;  // ← YANGI
   const referrerIdInput = document.getElementById("adminDriverReferrer").value.trim();
   const referrerId = referrerIdInput ? parseInt(referrerIdInput) : null;
 
@@ -1766,7 +1922,8 @@ async function adminRegisterDriver() {
         phone, 
         password, 
         role: "driver",          // ← majburiy driver
-        referrerId 
+        referrerId, 
+		name          // ← qo‘shildi
       })
     });
     const data = await res.json();
@@ -1781,10 +1938,101 @@ async function adminRegisterDriver() {
     // Formani tozalash
     document.getElementById("adminDriverPhone").value = "+998";
     document.getElementById("adminDriverPassword").value = "";
+	document.getElementById("adminDriverName").value = "";          // ← shu yerda
     document.getElementById("adminDriverReferrer").value = "";
     
   } catch (e) {
     alert("Server xatosi");
+  }
+}
+ function openTransferModal() {
+  if (!userId) {
+    alert("Avval tizimga kiring!");
+    return;
+  }
+  document.getElementById("transferToId").value = "";
+  document.getElementById("transferAmount").value = "";
+
+  const infoEl = document.getElementById("transferUserInfo");
+  if (infoEl) infoEl.innerText = "";
+
+  const loaderEl = document.getElementById("transferLoader");
+  if (loaderEl) loaderEl.style.display = "none";
+
+  document.getElementById("transferModal").style.display = "flex";
+  setupNumericInputById('transferToId', 'id');
+}
+
+ function closeTransferModal() {
+  document.getElementById("transferModal").style.display = "none";
+}
+
+  async function doTransfer() {
+  // ID inputda "123456789 · Ism" ko‘rinishida bo‘lishi mumkin — faqat raqamlarni olamiz
+  const rawToId = document.getElementById("transferToId").value.trim();
+  const toId = rawToId.replace(/[^0-9]/g, '').substring(0, 9);
+  const amount = document.getElementById("transferAmount").value.trim();
+
+  if (!toId || !amount) {
+    alert("ID va summani kiriting");
+    return;
+  }
+  
+  const numAmount = parseInt(amount);
+  if (isNaN(numAmount) || numAmount <= 0) {
+    alert("Summa to‘g‘ri emas");
+    return;
+  }
+
+  if (parseInt(toId) === userId) {
+    alert("O‘zingizga o‘tkaza olmaysiz");
+    return;
+  }
+
+  // Tugmani vaqtincha o‘chirish (double-click oldini olish)
+  const transferBtn = document.querySelector("#transferModal button[onclick='doTransfer()']");
+  if (transferBtn) {
+    transferBtn.disabled = true;
+    transferBtn.innerText = "⏳ Kutilmoqda...";
+  }
+
+  try {
+    const res = await fetch(API_URL + "/api/wallet/transfer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fromId: userId,
+        toId: parseInt(toId),
+        amount: numAmount
+      })
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      alert("❌ " + (data.error || "O‘tkazma amalga oshmadi"));
+      return;
+    }
+
+    alert(
+      `✅ O‘tkazma muvaffaqiyatli!\n\n` +
+      `Kimdan: ${userId}\n` +
+      `Kimga: ${toId}\n` +
+      `Summa: ${numAmount} so‘m\n` +
+      `Yangi balansingiz: ${data.fromBalance} so‘m`
+    );
+
+    closeTransferModal();
+    loadWallet(); // balansni yangilash
+
+  } catch (e) {
+    console.error("Transfer xato:", e);
+    alert("Server bilan bog‘lanib bo‘lmadi");
+  } finally {
+    if (transferBtn) {
+      transferBtn.disabled = false;
+      transferBtn.innerText = "✅ O‘tkazish";
+    }
   }
 }
 
