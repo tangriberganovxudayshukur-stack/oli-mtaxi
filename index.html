@@ -342,32 +342,31 @@ style="display:none; font-size:0.95rem; color:#0f0; margin-top:18px; line-height
             background:#000;
             z-index:20;
             position:relative;">
-  <h3>📦 Buyurtma</h3>
-
-  <p>📍 Yo‘lovchi joylashuvi:</p>
-  <p id="orderLocation"></p>
   <!-- 🔥 YANGI: MARSHRUT MASOFASI -->
-<p style="font-size:1.2rem; margin:10px 0; color:#0f0; font-weight:bold;">
-  🛣 Yo‘lovchigacha: <span id="pickupDistance">0.00</span> km
-</p>
+ 
+ <div id="orderSummaryRow"
+     style="display:flex; justify-content:space-between; align-items:center;
+            gap:8px; margin:12px 0 16px 0; padding:0 4px;
+            font-size:1.15rem; color:#0f0; font-weight:bold; flex-wrap:nowrap;">
+  <span style="white-space:nowrap;"><span id="pickupDistance">0.00</span> km</span>
+  <span class="price" style="font-size:1.9rem; margin:0; flex-shrink:0;"><span id="price">3000</span></span>
+  <span style="white-space:nowrap;"><span id="pickupETA">0</span> daq</span>
+ </div>
 
   <!-- SAFAR MA'LUMOTLARI -->
   <div id="tripPanel" style="display:none">
-
     <div class="row">⏱ Vaqt: <span id="time">00:00</span></div>
     <div class="row">📏 Masofa: <span id="distance">0.00</span> km</div>
-    <div class="price">💰 <span id="price">3000</span> so‘m</div>
-
-    <button id="tripBtn" onclick="toggleTrip()">▶ Start</button>
+	<button id="arrivedBtn" onclick="arrivedAtPickup()">✅ Yetib keldim</button>
+    <button id="tripBtn" onclick="toggleTrip()" style="display:none">▶ Start</button>
 	<button onclick="openNavigator()">🧭 Navigator</button>
 	<button onclick="callPassenger()">📞 Tel</button>
     <button onclick="endTrip()">🏁 Safarni yakunlash</button>
-	
-
+	<button id="cancelOrderBtn" onclick="cancelOrder()" style="background:#f00;">❌ Bekor qilish</button>
   </div>
 
   <!-- FAQAT BUYURTMA QABUL QILISH -->
-  <button id="acceptBtn" onclick="acceptOrder()">✅ Buyurtmani qabul qilish</button>
+  <button id="acceptBtn" onclick="acceptOrder()">qabul qilish</button>
 
                      
 
@@ -527,6 +526,14 @@ const API_URL =
   let previousDriverId = null;
   
   let currentOrder = null;
+  
+  let arrivedToPickup = false;   // 🔥 Yetib keldim bosilganidan keyin true bo‘ladi
+  
+  let autoStartTimeout = null;   // 🔥 Yetib keldimdan keyin 2 daqiqalik avto-start
+  
+  let autoStartCountdownInterval = null; // 🔥 Start tugmasidagi qolgan vaqt (01:59, 01:58...)
+  
+  let autoStartRemainingSec = 0;         // 🔥 qolgan soniyalar
 
   async function enableWakeLock() {
 
@@ -544,7 +551,17 @@ const API_URL =
 
   }
 
-function toggleTrip() {
+ function toggleTrip() {
+ // 🔥 Avto-start timerini bekor qilish (manual bosganda)
+  if (autoStartTimeout) {
+    clearTimeout(autoStartTimeout);
+    autoStartTimeout = null;
+  }
+    if (autoStartCountdownInterval) {
+    clearInterval(autoStartCountdownInterval);
+    autoStartCountdownInterval = null;
+  }
+  autoStartRemainingSec = 0;
   if (!tripActive) {
     // START
     tripActive = true;
@@ -565,11 +582,79 @@ function toggleTrip() {
     btn.style.background = "#0f0";
     btn.style.color = "#000";
   }
- 
-
 }
+function arrivedAtPickup() {
+  if (!currentOrder) {
+    alert("Buyurtma ma'lumoti topilmadi");
+    return;
+  }
+  arrivedToPickup = true;   // 🔥 HISOBLASHNI TO‘XTATISH
+  // Yetib keldim tugmasini yashirish, Start tugmasini ko‘rsatish
+  const arrivedBtn = document.getElementById("arrivedBtn");
+  const tripBtn = document.getElementById("tripBtn");
 
+  if (arrivedBtn) arrivedBtn.style.display = "none";
+  if (tripBtn) tripBtn.style.display = "block";
 
+  // Backendga xabar yuborish (ixtiyoriy, keyinroq ishlatish uchun)
+  fetch(API_URL + "/api/order/arrived", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      driverId: userId,
+      orderId: currentOrder.id
+    })
+  }).catch(err => console.log("Arrived xato:", err));
+  console.log("✅ Haydovchi manzilga yetib keldi — masofa/ETA yangilanish to‘xtatildi");
+
+  // 🔥 Eski timerlarni tozalash
+  if (autoStartTimeout) {
+    clearTimeout(autoStartTimeout);
+    autoStartTimeout = null;
+  }
+  if (autoStartCountdownInterval) {
+    clearInterval(autoStartCountdownInterval);
+    autoStartCountdownInterval = null;
+  }
+
+  // 🔥 2 DAQIQA (120 soniya) COUNTDOWN + AVTO START
+  autoStartRemainingSec = 120; // 02:00
+
+  // Darhol tugmada ko‘rsatish
+  function formatCountdown(sec) {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  }
+
+  if (tripBtn) {
+    tripBtn.innerText = `▶ Start (${formatCountdown(autoStartRemainingSec)})`;
+  }
+
+  // Har soniyada kamaytirish
+  autoStartCountdownInterval = setInterval(() => {
+    autoStartRemainingSec--;
+
+    if (autoStartRemainingSec <= 0) {
+      // Vaqt tugadi → avto-start
+      clearInterval(autoStartCountdownInterval);
+      autoStartCountdownInterval = null;
+      autoStartRemainingSec = 0;
+
+      if (!tripActive) {
+        console.log("⏱ 2 daqiqa o‘tdi → Start avtomatik bosildi");
+        toggleTrip(); // Start tugmasini bosadi
+      }
+      return;
+    }
+
+    // Tugma matnini yangilash: ▶ Start (01:59)
+    const btn = document.getElementById("tripBtn");
+    if (btn && !tripActive) {
+      btn.innerText = `▶ Start (${formatCountdown(autoStartRemainingSec)})`;
+    }
+  }, 1000);
+}
 function disableWakeLock() {
 
     if (wakeLock) {
@@ -592,7 +677,7 @@ function disableWakeLock() {
 
   let totalDistance = 0;
 
-  const startPrice = 3000;
+  let startPrice = 3000;   // 🔥 endi o‘zgaruvchan
 
   const pricePerMinute = 300;
 
@@ -632,11 +717,22 @@ function stopTrip() {
   interval = null;
 }
 
-function reset() {
+ function reset() {
   stopTrip();
   seconds = 0;
   totalDistance = 0;
   lastPosition = null;
+  
+   // 🔥 Avto-start timerini va countdown ni tozalash
+  if (autoStartTimeout) {
+    clearTimeout(autoStartTimeout);
+    autoStartTimeout = null;
+  }
+  if (autoStartCountdownInterval) {
+    clearInterval(autoStartCountdownInterval);
+    autoStartCountdownInterval = null;
+  }
+  autoStartRemainingSec = 0;
   
   // 🔥 MUHIM: UI elementlarini to'g'ridan-to'g'ri yangilash
   const timeEl = document.getElementById("time");
@@ -645,7 +741,7 @@ function reset() {
   
   if (timeEl) timeEl.innerText = "00:00";
   if (distanceEl) distanceEl.innerText = "0.00";
-  if (priceEl) priceEl.innerText = "3000";  // Boshlang'ich narx
+  if (priceEl) priceEl.innerText = startPrice;  // 🔥 o‘zgaruvchan
 }
 
   function onPosition(position) {
@@ -734,7 +830,7 @@ fetch(API_URL + "/api/driver/location", {
 
   // Haversine formulasi (km)
 
-  function haversine(lat1, lon1, lat2, lon2) {
+   function haversine(lat1, lon1, lat2, lon2) {
 
     const R = 6371;
 
@@ -755,6 +851,15 @@ fetch(API_URL + "/api/driver/location", {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
   }
+  
+  function calcPickupETA(distanceKm) {
+  if (!distanceKm || distanceKm <= 0) return 0;
+  const meters = distanceKm * 1000;
+  // Har 500 m ga yaxlitlash (1 m → 500 m, 501 m → 1000 m ...)
+  const roundedMeters = Math.ceil(meters / 500) * 500;
+  // Har 500 m = 1 daqiqa
+  return roundedMeters / 500;
+}
 
 function updateNetworkStatus() {
   const statusEl = document.getElementById("netStatus");
@@ -861,6 +966,15 @@ function goOffline() {
 
   // ====================== ASOSIY KOD (eski kod) ======================
   isOnline = false;
+  if (autoStartTimeout) {
+  clearTimeout(autoStartTimeout);
+  autoStartTimeout = null;
+}
+  if (autoStartCountdownInterval) {
+    clearInterval(autoStartCountdownInterval);
+    autoStartCountdownInterval = null;
+  }
+  autoStartRemainingSec = 0;
   document.getElementById("goOnlineBtn").style.display = "block";
   document.getElementById("goOfflineBtn").style.display = "none";
 
@@ -957,12 +1071,21 @@ function setRole(selectedRole) {
 }
 
 
-function endTrip() {
+ function endTrip() {
   if (!tripActive) {
     alert("Safar hali boshlanmagan");
     return;
   }
-
+// 🔥 Darhol countdown ni to‘xtatamiz
+  if (autoStartCountdownInterval) {
+    clearInterval(autoStartCountdownInterval);
+    autoStartCountdownInterval = null;
+  }
+  if (autoStartTimeout) {
+    clearTimeout(autoStartTimeout);
+    autoStartTimeout = null;
+  }
+  autoStartRemainingSec = 0;
   tripActive = false;
   stopTrip();
 
@@ -1015,6 +1138,7 @@ fetch(API_URL + "/api/trip", {
       // Avtomatik offline qilish
       goOffline();
     }
+   arrivedToPickup = false;
    reset();
    loadWallet();   // ←balans yangilash
   })
@@ -1029,7 +1153,14 @@ fetch(API_URL + "/api/trip", {
     btn.style.background = "#0f0";
     btn.style.color = "#000";
   }
-
+   const tripBtn = document.getElementById("tripBtn");
+   const arrivedBtn = document.getElementById("arrivedBtn");
+ if (tripBtn) {
+  tripBtn.style.display = "none";
+}
+ if (arrivedBtn) {
+  arrivedBtn.style.display = "block";
+}
   document.getElementById("tripPanel").style.display = "none";
   document.getElementById("orderBox").style.display = "none";
   
@@ -1054,6 +1185,83 @@ fetch(API_URL + "/api/trip", {
   document.getElementById("tripPanel").style.display = "none";
   document.getElementById("acceptBtn").style.display = "block";
 }
+async function cancelOrder() {
+  if (!currentOrder) {
+    alert("Buyurtma topilmadi");
+    return;
+  }
+
+  const confirmCancel = confirm(
+    "⚠️ DIQQAT!\n\n" +
+    "Buyurtmani bekor qilmoqchimisiz?\n\n" +
+    "• Yo‘lovchi xabar oladi\n" +
+    "• Siz yana linyaga qaytasiz\n" +
+    "• Marshrut tozalanadi"
+  );
+
+  if (!confirmCancel) return;
+
+  try {
+    const res = await fetch(API_URL + "/api/order/cancel", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderId: currentOrder.id })
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      alert("Bekor qilish amalga oshmadi");
+      return;
+    }
+
+    // UI tozalash
+    document.getElementById("orderBox").style.display = "none";
+    document.getElementById("tripPanel").style.display = "none";
+    document.getElementById("acceptBtn").style.display = "block";
+
+    // Marshrutni o‘chirish
+    if (route && yMap) {
+      yMap.geoObjects.remove(route);
+      route = null;
+    }
+    routeDrawn = false;
+
+    // Timer va holatlarni tozalash
+    if (autoStartTimeout) {
+      clearTimeout(autoStartTimeout);
+      autoStartTimeout = null;
+    }
+    if (autoStartCountdownInterval) {
+      clearInterval(autoStartCountdownInterval);
+      autoStartCountdownInterval = null;
+    }
+    autoStartRemainingSec = 0;
+    arrivedToPickup = false;
+    tripActive = false;
+    stopTrip();
+    reset();
+
+    // Order watcher ni qayta ishga tushirish
+    if (orderWatcher) {
+      clearInterval(orderWatcher);
+      orderWatcher = null;
+    }
+    watchOrdersForDriver();
+
+    currentOrder = null;
+    alert("✅ Buyurtma bekor qilindi");
+  } catch (err) {
+    console.error("Cancel xato:", err);
+    alert("Server bilan bog‘lanib bo‘lmadi");
+  }
+  // Tugmalarni dastlabki holatga qaytarish
+  const arrivedBtn = document.getElementById("arrivedBtn");
+  const tripBtn = document.getElementById("tripBtn");
+
+  if (arrivedBtn) arrivedBtn.style.display = "block";
+  if (tripBtn) tripBtn.style.display = "none";
+}
 
 
 //MODAL OYNASI OCHISH Funksiya BOSHLANDI
@@ -1065,20 +1273,11 @@ function openEndTripModal() {
   document.getElementById("mTime").innerText = finalTime;
   document.getElementById("mDistance").innerText = finalDistance;
   document.getElementById("mPrice").innerText = finalPrice;
-
   document.getElementById("endTripModal").style.display = "flex";
-  
-  // 🔥 Modal yopilgandan keyin narxni tozalash
-  document.getElementById("endTripModal").addEventListener("click", function(e) {
-    if (e.target === this) {
-      reset();
-      this.style.display = "none";
-    }
-  }, { once: true });
 }
 
 //MODAL OYNASI Yopish Funksiya BOSHLANDI
-function closeEndTripModal() {
+ function closeEndTripModal() {
   document.getElementById("endTripModal").style.display = "none";
 }
 
@@ -1330,6 +1529,12 @@ function watchOrdersForDriver() {
       box.style.display = "none";
       acceptBtn.classList.remove("countdown");
       acceptBtn.style.animation = "";
+	  
+	  if (acceptBtn) {
+        acceptBtn.innerText = "qabul qilish";
+        acceptBtn.classList.remove("countdown");
+        acceptBtn.style.animation = "";
+      }
 
       // 🔥 YANGI: TIMEOUT yoki offline bo‘lganda marshrutni 100% tozalaymiz
       if (route && yMap) {
@@ -1347,6 +1552,7 @@ function watchOrdersForDriver() {
 	  
 	  // 🔥 YANGI
       document.getElementById("pickupDistance").innerText = "0.00";
+	  document.getElementById("pickupETA").innerText = "0";   // ← shu qatorni qo‘shing
       routeDrawn = false;
       return;
     }
@@ -1361,11 +1567,9 @@ function watchOrdersForDriver() {
     }
 
     box.style.display = "block";
-    document.getElementById("orderLocation").innerText =
-      `Lat: ${order.lat.toFixed(5)}, Lng: ${order.lng.toFixed(5)}`;
-	  
-	  // 🔥 2. REAL VAQTDA MASOFA YANGILANISHI (har 2 sekundda)
-if (lastPosition && order) {
+      
+// 🔥 Faqat "accepted" va hali "Yetib keldim" bosilmagan bo‘lsa yangilanadi
+if (lastPosition && order && order.status === "accepted" && !arrivedToPickup) {
     const currentDist = haversine(
         lastPosition.lat,
         lastPosition.lng,
@@ -1373,6 +1577,10 @@ if (lastPosition && order) {
         order.lng
     );
     document.getElementById("pickupDistance").innerText = currentDist.toFixed(2);
+	
+    // Taxminiy yetib borish vaqti
+    const etaEl = document.getElementById("pickupETA");
+    if (etaEl) etaEl.innerText = calcPickupETA(currentDist);
 }
 
     if (order.status === "waiting") {
@@ -1382,6 +1590,11 @@ if (lastPosition && order) {
       const now = Date.now();
       const elapsed = now - (order.createdAt || now);
       const remainingSec = Math.max(0, 15 - Math.floor(elapsed / 1000));
+	  
+	   // 🔥 Qolgan vaqtni tugma matnida ko‘rsatish
+        acceptBtn.innerText = remainingSec > 0
+        ? `qabul qilish (${remainingSec})`
+        : "qabul qilish (0)";
 
       if (!acceptBtn.dataset.orderId || acceptBtn.dataset.orderId !== String(order.id)) {
         acceptBtn.dataset.orderId = order.id;
@@ -1396,7 +1609,9 @@ if (lastPosition && order) {
       acceptBtn.classList.remove("countdown");
       acceptBtn.style.animation = "";
       tripPanel.style.display = "block";
+	  acceptBtn.innerText = "qabul qilish";
     }
+	
     // Marshrut chizish (eski kod saqlangan)
     if (lastPosition && !routeDrawn) {
       drawRoute(lastPosition.lat, lastPosition.lng, order.lat, order.lng);
@@ -1419,9 +1634,10 @@ function syncTrip() {
   });
 }
 
-async function acceptOrder() {
+ async function acceptOrder() {
+  arrivedToPickup = false;   // yangi buyurtma uchun
  // 🔥 YANGI: Buyurtma qabul qilishdan oldin narxni tozalash
-  document.getElementById("price").innerText = "3000";
+  document.getElementById("price").innerText = startPrice;   // 🔥 o‘zgaruvchan narx
   document.getElementById("time").innerText = "00:00";
   document.getElementById("distance").innerText = "0.00";
   
@@ -1457,7 +1673,7 @@ function restoreBox() {
   }, 200);
 }
 
- function drawRoute(driverLat, driverLng, passengerLat, passengerLng) {
+  function drawRoute(driverLat, driverLng, passengerLat, passengerLng) {
   if (!yMap) return;
 
   // eski yo‘lni o‘chirish
@@ -1479,19 +1695,36 @@ function restoreBox() {
     });
 
     yMap.geoObjects.add(route);
-
     routeDrawn = true;
-	
-	 // 🔥 YANGI: HAQIQIY YO‘L MASOFASI (Yandexdan olingan)
+
+    // 🔥 YANGI: Yandex marshrut masofasidan boshlang‘ich narxni hisoblash
     const path = r.getPaths().get(0);
     if (path) {
       const lengthMeters = path.getLength();           // metrda
-      const lengthKm = (lengthMeters / 1000).toFixed(2);
+      const lengthKm = lengthMeters / 1000;
       
+      // UI da masofani ko‘rsatish
       const distEl = document.getElementById("pickupDistance");
-      if (distEl) distEl.innerText = lengthKm;
+      if (distEl) distEl.innerText = lengthKm.toFixed(2);
+	  
+	  // 🔥 Taxminiy yetib borish vaqti
+      const etaEl = document.getElementById("pickupETA");
+      if (etaEl) etaEl.innerText = calcPickupETA(lengthKm);
       
-      console.log(`🛣 Marshrut masofasi: ${lengthKm} km`);
+      // 🔥 Boshlang‘ich narx hisoblash
+      // 2 km gacha → 3000 so‘m
+      // 2 km dan ortiq har 500 m uchun +1000 so‘m
+      let extra = 0;
+      if (lengthKm > 2) {
+        extra = Math.ceil((lengthKm - 2) / 0.5) * 1000;
+      }
+      startPrice = 3000 + extra;
+
+      // Narxni darhol UI da yangilash
+      const priceEl = document.getElementById("price");
+      if (priceEl) priceEl.innerText = startPrice;
+
+      console.log(`🛣 Marshrut: ${lengthKm.toFixed(2)} km → Boshlang‘ich narx: ${startPrice} so‘m`);
     }
 
   }).catch(err => {
@@ -1509,11 +1742,23 @@ let passengerRoute = null;
       const orderRes = await fetch(API_URL + "/api/order/passenger/" + window.currentOrderId);
       const order = await orderRes.json();
 
-      // 🔥 YANGI QATOR — BU MUHIM! 
-      // Agar safar tugagan bo‘lsa — hech narsa qilmaymiz, marker qayta yaratilmaydi
-      if (!order || !order.driverId || order.status === "finished" || order.status === "cancelled") {
-        return;
-      }
+     // 🔥 BEKOR QILINGAN / YAKUNLANGAN / ORDER YO‘Q → xaritani tozalash va kuzatuvni to‘xtatish
+if (!order || order.status === "finished" || order.status === "cancelled") {
+  clearPassengerMap();
+  return;
+}
+if (!order.driverId) {
+  if (driverMarker && pMap) {
+    pMap.geoObjects.remove(driverMarker);
+    driverMarker = null;
+  }
+  if (passengerRoute && pMap) {
+    pMap.geoObjects.remove(passengerRoute);
+    passengerRoute = null;
+  }
+  // locationLocked va manual joylashuvni saqlab qolamiz!
+  return;
+}
 	  
 	  // 🔥 YANGI: Haydovchi o‘zgardi (reassign) — eski marshrutni o‘chiramiz
       if (order.driverId !== previousDriverId) {
@@ -1638,8 +1883,8 @@ let passengerRoute = null;
 }
 
  function openNavigator() {
-  if (!currentOrder || !currentOrder.lat || !currentOrder.lng) {
-    alert("Buyurtma koordinatalari hali mavjud emas.\nIltimos, biroz kutib turing.");
+  if (!currentOrder || !currentOrder.lat || !currentOrder.lng || currentOrder.status === "cancelled" || currentOrder.status === "finished") {
+    alert("Buyurtma koordinatalari hali mavjud emas yoki buyurtma bekor qilingan.\nIltimos, biroz kutib turing.");
     return;
   }
 
@@ -1692,8 +1937,8 @@ window.addEventListener("load", () => {
 
 // ==================== YANGI FUNKSIYA ====================
   function callPassenger() {
-  if (!currentOrder || !currentOrder.passengerPhone) {
-    alert("❌ Yo‘lovchi raqami topilmadi.\n\nIltimos, biroz kutib turing yoki sahifani yangilang.");
+ if (!currentOrder || !currentOrder.passengerPhone || currentOrder.status === "cancelled" || currentOrder.status === "finished") {
+    alert("❌ Yo‘lovchi raqami topilmadi yoki buyurtma bekor qilingan.");
     return;
   }
 
@@ -2047,9 +2292,7 @@ function callAdmin() {
 </script>
 
 <script>
-
 let tripWatchInterval = null;
-
 function watchCurrentTrip() {
   if (tripWatchInterval) return;
   tripWatchInterval = setInterval(async () => {
@@ -2058,12 +2301,23 @@ function watchCurrentTrip() {
 
     const el = document.getElementById("tripInfo");
 
-    if (!order || !order.driverId) {
+    // 🔥 BEKOR QILINGAN yoki order topilmagan → xaritani tozalash
+    if (!order || order.status === "cancelled" || order.status === "finished") {
+      el.innerHTML = order && order.status === "cancelled"
+        ? "<p>❌ Buyurtma bekor qilindi</p>"
+        : "<p>🏁 Safar yakunlandi</p>";
+      clearPassengerMap();
+      clearInterval(tripWatchInterval);
+      tripWatchInterval = null;
+      return;
+    }
+
+    if (!order.driverId) {
       el.innerHTML = "<p>🚕 Hozircha faol safar yo‘q</p>";
       return;
     }
 
-    // 🔥 YANGI — faqat o‘z haydovchining safarini olamiz
+    // faqat o‘z haydovchining safarini olamiz
     const tripRes = await fetch(API_URL + "/api/trip/driver/" + order.driverId);
     const trip = await tripRes.json();
 
@@ -2089,19 +2343,8 @@ function watchCurrentTrip() {
       `;
       return;
     }
-
-    // 🏁 safar tugadi
-    if (!trip || order.status === "finished") {
-      el.innerHTML = "<p>🏁 Safar yakunlandi</p>";
-      clearPassengerMap();
-      clearInterval(tripWatchInterval);
-      tripWatchInterval = null;
-      return;
-    }
   }, 2000);
 }
-
-
 </script>
 </body>
 
