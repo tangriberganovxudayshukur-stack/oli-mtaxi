@@ -549,11 +549,58 @@ app.post("/api/driver/offline", (req, res) => {
 app.post("/api/order/cancel", (req, res) => {
   const { orderId } = req.body;
   const order = orders.find(o => o.id == orderId);
+
   if (order) {
     const driver = drivers.find(d => d.id == order.driverId);
-    if (driver) driver.busy = false;
-    orders = orders.filter(o => o.id != orderId);
+    if (driver) {
+      driver.busy = false;
+      driver.availableSince = Date.now();   // 🔥 Navbat oxiriga tashlash
+      console.log(`🔄 Driver ${order.driverId} cancel qildi → navbat oxiriga tashlandi`);
+    }
+
+    order.status = "cancelled";
+    order.cancelledAt = Date.now();
+
+    // ========== 1. AVVAL NARXNI OLISH ==========
+    let finalPrice = 0;
+    let originalPrice = 0;
+
+    if (order.driverId && activeTrips[order.driverId]?.price) {
+      originalPrice = parseInt(activeTrips[order.driverId].price) || 0;
+      finalPrice = Math.ceil(originalPrice / 100) * 100;
+    }
+
+    // ========== 2. KEYIN activeTrips ni tozalash ==========
+    if (order.driverId && activeTrips[order.driverId]) {
+      delete activeTrips[order.driverId];
+    }
+
+    // ========== 3. trips.json ga saqlash ==========
+    const cancelledTrip = {
+      orderId: order.id,
+      driverId: order.driverId,
+      passengerId: order.passengerId || null,
+      status: "cancelled",
+      cancelledAt: order.cancelledAt,
+      lat: order.lat,
+      lng: order.lng,
+      originalPrice: originalPrice,
+      price: finalPrice,
+      reason: "driver_cancelled"
+    };
+
+    try {
+      let data = fs.existsSync("trips.json")
+        ? JSON.parse(fs.readFileSync("trips.json", "utf-8"))
+        : [];
+      data.push(cancelledTrip);
+      fs.writeFileSync("trips.json", JSON.stringify(data, null, 2));
+      console.log(`📝 Cancelled trip saqlandi: order ${order.id}, price: ${finalPrice}`);
+    } catch (e) {
+      console.error("trips.json saqlashda xato:", e);
+    }
   }
+
   res.json({ success: true });
 });
 
@@ -618,9 +665,10 @@ function reassignOrder(order) {
   });
 
   if (bestDriver) {
-    order.driverId = bestDriver.id;
-    console.log(`✅ Buyurtma ${order.id} → yangi haydovchi ${bestDriver.id} ga o‘tkazildi`);
-  }
+  order.driverId = bestDriver.id;
+  order.createdAt = Date.now();   // 🔥 YANGI: yangi haydovchi uchun 15 soniya qayta boshlansin
+  console.log(`✅ Buyurtma ${order.id} → yangi haydovchi ${bestDriver.id} ga o‘tkazildi`);
+}
 }
 
 // Har 10 sekundda tekshirish (bu qism o‘zgarmasin)
